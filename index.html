@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>迷路TD - エンハンストエディション</title>
-  <meta name="description" content="拡張版迷路型タワーディフェンス：タワーアップグレード、特殊能力、多様な敵と戦略的な防衛を楽しめます" />
+  <title>迷路TD - タップ操作版</title>
+  <meta name="description" content="タップ操作に最適化された迷路型タワーディフェンスゲーム" />
   <style>
     :root{
       --bg: #0a0e14; 
@@ -18,63 +18,290 @@
       --accent2: #a78bfa;
       --accent3: #34d399;
       
-      --bar: 104px;
-      --tile: 44px;
+      --bar: 110px;
+      --tile: 40px;
       --grid-w: 12;
-      --grid-h: 16;
+      --grid-h: 14;
     }
     *{box-sizing:border-box;touch-action:manipulation}
     html,body{
-      height:100dvh;margin:0;background:var(--bg);color:var(--ink);
+      height:100%;margin:0;background:var(--bg);color:var(--ink);
       font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
       overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
     }
-    #wrap{min-height:100%;display:grid;grid-template-rows:1fr auto;}
+    #wrap{
+      height:100vh;
+      height:100dvh;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
     #fieldWrap{
-      position:relative;overflow:hidden;border-bottom:1px solid #1f2937;
-      touch-action:none;background-image:radial-gradient(circle at 50% 50%, #131a25 0%, #0a0e14 100%);
+      position:relative;
+      flex:1;
+      overflow:hidden;
+      border-bottom:1px solid #1f2937;
+      background-image:radial-gradient(circle at 50% 50%, #131a25 0%, #0a0e14 100%);
     }
     #grid{
-      position:relative;display:grid;
+      position:relative;
+      display:grid;
       grid-template-columns:repeat(var(--grid-w), var(--tile));
       grid-template-rows:repeat(var(--grid-h), var(--tile));
       width:calc(var(--grid-w) * var(--tile));
       height:calc(var(--grid-h) * var(--tile));
-      margin:0 auto;touch-action:none;
+      margin:4px auto;
       background-image:linear-gradient(rgba(18,27,39,0.3) 1px, transparent 1px),
         linear-gradient(90deg, rgba(18,27,39,0.3) 1px, transparent 1px);
       background-size:var(--tile) var(--tile);
     }
-    .cell{width:var(--tile);height:var(--tile);border:1px solid rgba(15,23,42,0.5);background:rgba(11,18,32,0.5)}
+    .cell{
+      width:var(--tile);
+      height:var(--tile);
+      border:1px solid rgba(15,23,42,0.5);
+      background:rgba(11,18,32,0.5);
+      position:relative;
+    }
     .cell.path{background:rgba(12,37,60,0.6);box-shadow:inset 0 0 10px rgba(32,120,220,0.3)}
     .cell.start{background:radial-gradient(circle, rgba(19,78,74,0.8) 0%, rgba(19,78,74,0.4) 70%);box-shadow:inset 0 0 15px rgba(72,187,120,0.5)}
     .cell.goal{background:radial-gradient(circle, rgba(74,19,19,0.8) 0%, rgba(74,19,19,0.4) 70%);box-shadow:inset 0 0 15px rgba(239,68,68,0.5)}
-    .entity{position:absolute;pointer-events:none;translate:-50% -50%;transition:transform 0.1s ease-out;}
-    .enemy{width:28px;height:28px;border-radius:6px;background:#ef4444;box-shadow:0 0 0 2px rgba(0,0,0,.25);animation:pulse 1.5s infinite alternate;}
-    .enemy.tank{width:34px;height:34px;background:linear-gradient(145deg, #b91c1c, #991b1b);animation:tankMove 2s infinite alternate;}
-    .enemy.bike{width:24px;height:24px;background:linear-gradient(145deg, #f97316, #ea580c);animation:bikeMove 0.8s infinite alternate;}
-    .enemy.boss{width:46px;height:46px;background:radial-gradient(circle, #7f1d1d, #450a0a);outline:3px solid #fecaca;animation:bossPulse 1s infinite alternate;}
-    .enemy.elite{width:32px;height:32px;background:linear-gradient(145deg, #c026d3, #86198f);box-shadow:0 0 10px rgba(192,38,211,0.7);animation:elitePulse 1.2s infinite alternate;}
-    .tower,.unit{width:30px;height:30px;border-radius:4px;background:#60a5fa;border:2px solid #1d4ed8;box-shadow:0 0 8px rgba(96,165,250,0.6);}
-    .tower.sniper{background:linear-gradient(145deg, #a78bfa, #7c3aed);border-color:#6d28d9;box-shadow:0 0 8px rgba(167,139,250,0.6);}
-    .tower.mg{background:linear-gradient(145deg, #34d399, #059669);border-color:#059669;box-shadow:0 0 8px rgba(52,211,153,0.6);}
-    .tower.rocket{background:linear-gradient(145deg, #f97316, #ea580c);border-color:#c2410c;box-shadow:0 0 8px rgba(249,115,22,0.6);}
-    .unit.infantry{background:linear-gradient(145deg, #f59e0b, #d97706);border-color:#b45309;box-shadow:0 0 8px rgba(245,158,11,0.6);}
-    .unit.vehicle{background:linear-gradient(145deg, #cbd5e1, #94a3b8);border-color:#475569;box-shadow:0 0 8px rgba(203,213,225,0.6);}
-    .trap.mine{width:22px;height:22px;border-radius:50%;background:#f43f5e;border:2px dashed #7f1d1d;animation:pulse 1.2s infinite alternate;}
-    .trap.slow{width:34px;height:34px;border-radius:6px;background:rgba(30,41,59,0.8);border:2px solid #334155;animation:slowPulse 2s infinite alternate;}
-    .bullet{width:6px;height:6px;border-radius:50%;background:#eab308;box-shadow:0 0 4px rgba(234,179,8,0.8);}
-    .rocket{width:12px;height:6px;background:linear-gradient(90deg, #f97316, #f59e0b);border-radius:3px;box-shadow:0 0 8px rgba(249,115,22,0.8);}
-    .laser{height:2px;background:linear-gradient(90deg, rgba(167,139,250,0.8), transparent);transform-origin:0 50%;}
-    .ghost{position:absolute;pointer-events:none;border:2px dashed rgba(147,197,253,0.5);border-radius:10px;background:rgba(96,165,250,0.1);translate:-50% -50%;}
-    .range-circle{position:absolute;border-radius:50%;border:1px solid rgba(96,165,250,0.5);background:rgba(96,165,250,0.1);translate:-50% -50%;pointer-events:none;}
-    .upgrade-indicator{position:absolute;width:10px;height:10px;background:var(--warn);border-radius:50%;bottom:2px;right:2px;border:1px solid rgba(0,0,0,0.3);}
-    .health-bar{position:absolute;width:80%;height:3px;background:#1f2937;bottom:-6px;left:10%;border-radius:2px;overflow:hidden;}
-    .health-fill{height:100%;background:var(--ok);width:100%;transition:width 0.2s ease;}
+    .cell.can-place{
+      background:rgba(96,165,250,0.1);
+      box-shadow:inset 0 0 0 2px rgba(96,165,250,0.3);
+    }
+    .cell.cannot-place{
+      background:rgba(239,68,68,0.1);
+      box-shadow:inset 0 0 0 2px rgba(239,68,68,0.3);
+    }
     
-    /* パーティクル効果 */
-    .particle{position:absolute;pointer-events:none;border-radius:50%;}
-    .explosion{position:absolute;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle, rgba(249,115,22,0.8) 0%, transparent 70%);pointer-events:none;animation:explode 0.5s forwards;}
+    /* エンティティのスタイル */
+    .entity{
+      position:absolute;
+      pointer-events:none;
+      translate:-50% -50%;
+      transition:transform 0.1s ease-out;
+      z-index:2;
+    }
+    
+    /* 敵のスタイル */
+    .enemy{
+      width:28px;
+      height:28px;
+      border-radius:6px;
+      background:#ef4444;
+      box-shadow:0 0 0 2px rgba(0,0,0,.25);
+      animation:pulse 1.5s infinite alternate;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .enemy::before{
+      content:"";
+      position:absolute;
+      width:12px;
+      height:12px;
+      background:#000;
+      border-radius:2px;
+      opacity:0.3;
+    }
+    .enemy.tank{
+      width:34px;
+      height:34px;
+      background:linear-gradient(145deg, #b91c1c, #991b1b);
+      animation:tankMove 2s infinite alternate;
+      border-radius:8px;
+    }
+    .enemy.tank::before{
+      width:16px;
+      height:8px;
+      background:#000;
+      border-radius:1px;
+      top:8px;
+    }
+    .enemy.bike{
+      width:24px;
+      height:24px;
+      background:linear-gradient(145deg, #f97316, #ea580c);
+      animation:bikeMove 0.8s infinite alternate;
+      border-radius:50%;
+    }
+    .enemy.bike::before{
+      width:8px;
+      height:8px;
+      background:#000;
+      border-radius:50%;
+    }
+    .enemy.boss{
+      width:46px;
+      height:46px;
+      background:radial-gradient(circle, #7f1d1d, #450a0a);
+      outline:3px solid #fecaca;
+      animation:bossPulse 1s infinite alternate;
+      border-radius:12px;
+    }
+    .enemy.boss::before{
+      width:20px;
+      height:20px;
+      background:#000;
+      border-radius:4px;
+    }
+    .enemy.elite{
+      width:32px;
+      height:32px;
+      background:linear-gradient(145deg, #c026d3, #86198f);
+      box-shadow:0 0 10px rgba(192,38,211,0.7);
+      animation:elitePulse 1.2s infinite alternate;
+      border-radius:8px;
+    }
+    .enemy.elite::before{
+      width:14px;
+      height:14px;
+      background:#000;
+      border-radius:3px;
+    }
+    
+    /* タワーとユニットのスタイル */
+    .tower, .unit{
+      width:30px;
+      height:30px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      box-shadow:0 0 8px rgba(0,0,0,0.4);
+    }
+    .tower::before, .unit::before{
+      content:"";
+      position:absolute;
+      width:60%;
+      height:60%;
+      background:rgba(255,255,255,0.8);
+      border-radius:2px;
+    }
+    .tower{
+      background:#60a5fa;
+      border:2px solid #1d4ed8;
+    }
+    .tower.sniper{
+      background:linear-gradient(145deg, #a78bfa, #7c3aed);
+      border-color:#6d28d9;
+    }
+    .tower.mg{
+      background:linear-gradient(145deg, #34d399, #059669);
+      border-color:#059669;
+    }
+    .tower.rocket{
+      background:linear-gradient(145deg, #f97316, #ea580c);
+      border-color:#c2410c;
+    }
+    .unit.infantry{
+      background:linear-gradient(145deg, #f59e0b, #d97706);
+      border-color:#b45309;
+    }
+    .unit.vehicle{
+      background:linear-gradient(145deg, #cbd5e1, #94a3b8);
+      border-color:#475569;
+    }
+    
+    /* トラップのスタイル */
+    .trap{
+      width:26px;
+      height:26px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+    }
+    .trap.mine{
+      border-radius:50%;
+      background:#f43f5e;
+      border:2px dashed #7f1d1d;
+      animation:pulse 1.2s infinite alternate;
+    }
+    .trap.mine::before{
+      content:"";
+      position:absolute;
+      width:40%;
+      height:40%;
+      background:#000;
+      border-radius:50%;
+      opacity:0.4;
+    }
+    .trap.slow{
+      width:34px;
+      height:34px;
+      border-radius:8px;
+      background:rgba(30,41,59,0.8);
+      border:2px solid #334155;
+      animation:slowPulse 2s infinite alternate;
+    }
+    .trap.slow::before{
+      content:"❄️";
+      font-size:16px;
+      filter:grayscale(1) brightness(2);
+    }
+    
+    /* 弾丸とエフェクト */
+    .bullet{
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:#eab308;
+      box-shadow:0 0 4px rgba(234,179,8,0.8);
+    }
+    .rocket{
+      width:12px;
+      height:6px;
+      background:linear-gradient(90deg, #f97316, #f59e0b);
+      border-radius:3px;
+      box-shadow:0 0 8px rgba(249,115,22,0.8);
+    }
+    .laser{
+      height:2px;
+      background:linear-gradient(90deg, rgba(167,139,250,0.8), transparent);
+      transform-origin:0 50%;
+    }
+    
+    /* ヒントとUI要素 */
+    .health-bar{
+      position:absolute;
+      width:80%;
+      height:3px;
+      background:#1f2937;
+      bottom:-6px;
+      left:10%;
+      border-radius:2px;
+      overflow:hidden;
+    }
+    .health-fill{
+      height:100%;
+      background:var(--ok);
+      width:100%;
+      transition:width 0.2s ease;
+    }
+    .upgrade-indicator{
+      position:absolute;
+      width:10px;
+      height:10px;
+      background:var(--warn);
+      border-radius:50%;
+      bottom:2px;
+      right:2px;
+      border:1px solid rgba(0,0,0,0.3);
+      z-index:3;
+    }
+    .explosion{
+      position:absolute;
+      width:60px;
+      height:60px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(249,115,22,0.8) 0%, transparent 70%);
+      pointer-events:none;
+      animation:explode 0.5s forwards;
+      z-index:4;
+    }
     
     /* アニメーション */
     @keyframes pulse{from{transform:scale(1);} to{transform:scale(1.05);}}
@@ -84,57 +311,270 @@
     @keyframes elitePulse{0%{box-shadow:0 0 5px rgba(192,38,211,0.5);} 100%{box-shadow:0 0 15px rgba(192,38,211,0.9);}}
     @keyframes slowPulse{0%{opacity:0.6;} 100%{opacity:1;}}
     @keyframes explode{0%{transform:scale(0); opacity:1;} 100%{transform:scale(1.5); opacity:0;}}
-    @keyframes float{0%{transform:translateY(0);} 100%{transform:translateY(-4px);}}
-    @keyframes glow{0%{box-shadow:0 0 5px rgba(96,165,250,0.6);} 100%{box-shadow:0 0 15px rgba(96,165,250,0.9);}}
     
-    #bar{position:relative;background:var(--panel);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:var(--bar);}
-    #stats{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted)}
+    /* コントロールバー */
+    #bar{
+      background:var(--panel);
+      padding:8px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:var(--bar);
+      box-sizing:border-box;
+    }
+    #stats{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      font-size:14px;
+      color:var(--muted);
+      flex-wrap:wrap;
+      justify-content:center;
+    }
     #stats b{color:var(--ink)}
-    #palette{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .item{display:flex;flex-direction:column;align-items:center;gap:4px;background:#111827;border:1px solid #1f2937;padding:6px 8px;border-radius:10px;min-width:62px;transition:all 0.2s ease;}
-    .item:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,0.2);}
-    .item.sel{outline:2px solid var(--accent1);background:#1a2537;}
-    .item .ico{width:28px;height:28px;border-radius:6px}
-    .item .name{font-size:12px;color:#cbd5e1}
-    .item .cost{font-size:11px;color:#9aa4b2}
-    #skills{display:flex;gap:6px;margin-top:4px;}
-    .skill-btn{background:#1f2937;border:1px solid #374151;border-radius:6px;padding:4px 8px;font-size:11px;color:#cbd5e1;cursor:pointer;transition:all 0.2s ease;}
-    .skill-btn:disabled{opacity:0.5;cursor:not-allowed;}
-    .skill-btn:not(:disabled):active{transform:translateY(1px)}
+    #palette{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .item{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      background:#111827;
+      border:1px solid #1f2937;
+      padding:6px 8px;
+      border-radius:10px;
+      min-width:58px;
+      transition:all 0.2s ease;
+      touch-action:manipulation;
+    }
+    .item:active{
+      transform:translateY(2px);
+    }
+    .item.sel{
+      outline:2px solid var(--accent1);
+      background:#1a2537;
+    }
+    .item .ico{
+      width:24px;
+      height:24px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .item .name{
+      font-size:11px;
+      color:#cbd5e1;
+    }
+    .item .cost{
+      font-size:10px;
+      color:#9aa4b2;
+    }
     
-    #ctrls{position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:3}
-    .btn{appearance:none;border:none;border-radius:999px;background:#1f2937;color:#e5e7eb;padding:8px 12px;font-size:12px;transition:all 0.2s ease;}
-    .btn:hover{background:#2a374b;}
-    .btn:active{transform:translateY(1px)}
+    /* コントロールボタン */
+    #ctrls{
+      position:absolute;
+      left:10px;
+      top:10px;
+      display:flex;
+      gap:6px;
+      z-index:3;
+      flex-wrap:wrap;
+      max-width:70%;
+    }
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:999px;
+      background:#1f2937;
+      color:#e5e7eb;
+      padding:6px 10px;
+      font-size:11px;
+      transition:all 0.2s ease;
+      touch-action:manipulation;
+    }
+    .btn:active{
+      transform:translateY(1px);
+    }
     .btn.primary{background:var(--accent1);color:white;}
     .btn.warning{background:var(--warn);color:white;}
     .btn.danger{background:var(--bad);color:white;}
     
-    .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);z-index:10;backdrop-filter:blur(4px);}
+    /* オーバーレイとポップアップ */
+    .overlay{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.75);
+      z-index:10;
+      backdrop-filter:blur(4px);
+    }
     .overlay.show{display:flex;animation:fadeIn 0.3s ease;}
-    .panel{background:#0f1520;border:1px solid #1f2937;border-radius:16px;max-width:520px;width:92%;padding:20px;box-shadow:0 10px 25px rgba(0,0,0,0.5);}
-    .panel h1{font-size:22px;margin:0 0 8px;color:var(--accent1);text-align:center;}
-    .panel h2{font-size:16px;margin:10px 0 6px;color:#cbd5e1}
-    .panel p{margin:4px 0;color:#9aa4b2;line-height:1.5;}
-    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .chip{border:1px solid #374151;background:#111827;color:#e5e7eb;padding:8px 16px;border-radius:999px;font-size:14px;transition:all 0.2s ease;cursor:pointer;}
-    .chip:hover{background:#1a2537;}
-    .chip.sel{outline:2px solid var(--accent1);background:#1a2537;}
-    #toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#111827;border:1px solid #1f2937;color:#e5e7eb;border-radius:999px;padding:8px 16px;font-size:13px;opacity:0;transition:opacity .2s;z-index:6;box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+    .panel{
+      background:#0f1520;
+      border:1px solid #1f2937;
+      border-radius:16px;
+      max-width:90%;
+      width:400px;
+      padding:20px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.5);
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    .panel h1{
+      font-size:20px;
+      margin:0 0 8px;
+      color:var(--accent1);
+      text-align:center;
+    }
+    .panel h2{
+      font-size:16px;
+      margin:10px 0 6px;
+      color:#cbd5e1;
+    }
+    .panel p{
+      margin:4px 0;
+      color:#9aa4b2;
+      line-height:1.5;
+      font-size:14px;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+      justify-content:center;
+    }
+    .chip{
+      border:1px solid #374151;
+      background:#111827;
+      color:#e5e7eb;
+      padding:8px 16px;
+      border-radius:999px;
+      font-size:14px;
+      transition:all 0.2s ease;
+      touch-action:manipulation;
+    }
+    .chip:active{
+      transform:translateY(1px);
+    }
+    .chip.sel{
+      outline:2px solid var(--accent1);
+      background:#1a2537;
+    }
+    #toast{
+      position:absolute;
+      left:50%;
+      top:14px;
+      transform:translateX(-50%);
+      background:#111827;
+      border:1px solid #1f2937;
+      color:#e5e7eb;
+      border-radius:999px;
+      padding:8px 16px;
+      font-size:13px;
+      opacity:0;
+      transition:opacity .2s;
+      z-index:6;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      text-align:center;
+      max-width:80%;
+    }
     #toast.show{opacity:1;}
     
     /* アップグレードUI */
-    .upgrade-ui{position:absolute;background:#0f1520;border:1px solid #1f2937;border-radius:12px;padding:12px;z-index:4;box-shadow:0 5px 15px rgba(0,0,0,0.3);display:none;}
-    .upgrade-ui h3{margin:0 0 8px;font-size:14px;color:var(--accent1);}
-    .upgrade-option{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1f2937;}
+    .upgrade-ui{
+      position:absolute;
+      background:#0f1520;
+      border:1px solid #1f2937;
+      border-radius:12px;
+      padding:12px;
+      z-index:4;
+      box-shadow:0 5px 15px rgba(0,0,0,0.3);
+      display:none;
+      min-width:150px;
+    }
+    .upgrade-ui h3{
+      margin:0 0 8px;
+      font-size:14px;
+      color:var(--accent1);
+      text-align:center;
+    }
+    .upgrade-option{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:6px 0;
+      border-bottom:1px solid #1f2937;
+    }
     .upgrade-option:last-child{border-bottom:none;}
-    .upgrade-btn{background:var(--accent1);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;}
-    .upgrade-btn:disabled{opacity:0.5;cursor:not-allowed;}
-    
-    /* ヒント表示 */
-    .hint{position:absolute;background:rgba(17,24,39,0.9);border:1px solid #374151;border-radius:8px;padding:8px 12px;font-size:12px;color:#cbd5e1;z-index:4;max-width:200px;display:none;}
+    .upgrade-btn{
+      background:var(--accent1);
+      color:white;
+      border:none;
+      border-radius:6px;
+      padding:4px 8px;
+      font-size:12px;
+      touch-action:manipulation;
+    }
+    .upgrade-btn:active{
+      transform:translateY(1px);
+    }
+    .upgrade-btn:disabled{
+      opacity:0.5;
+    }
     
     @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+    
+    /* スマホ最適化 */
+    @media (max-height: 700px) {
+      :root {
+        --tile: 36px;
+        --bar: 100px;
+      }
+      #grid {
+        margin:2px auto;
+      }
+      #stats {
+        font-size:12px;
+        gap:8px;
+      }
+      .item {
+        padding:4px 6px;
+        min-width:52px;
+      }
+      .item .name {
+        font-size:10px;
+      }
+      .item .cost {
+        font-size:9px;
+      }
+    }
+    
+    @media (max-width: 400px) {
+      #ctrls {
+        top:5px;
+        left:5px;
+        gap:4px;
+      }
+      .btn {
+        padding:5px 8px;
+        font-size:10px;
+      }
+      #palette {
+        gap:4px;
+      }
+      .item {
+        min-width:50px;
+        padding:4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -144,36 +584,25 @@
         <button class="btn primary" id="btnStartWave">Wave開始</button>
         <button class="btn warning" id="btnPause">一時停止</button>
         <button class="btn" id="btnSpeed">速度×1</button>
-        <button class="btn" id="btnSkill1" data-skill="airStrike">空爆支援</button>
-        <button class="btn" id="btnSkill2" data-skill="freeze">時間停止</button>
       </div>
       <div id="grid" aria-label="戦場"></div>
       <div id="toast"></div>
       <div id="upgradeUI" class="upgrade-ui"></div>
-      <div id="hint" class="hint"></div>
       
       <div id="overlay" class="overlay show" role="dialog" aria-modal="true">
         <div class="panel">
-          <h1>迷路TD - エンハンストエディション</h1>
-          <p>拡張版迷路型タワーディフェンス！タワーを戦略的に配置し、多様な敵の波を防衛せよ。</p>
-          <p>新機能: タワーアップグレード、特殊能力、多様な敵タイプ、ビジュアルエフェクト</p>
+          <h1>迷路TD - タップ操作版</h1>
+          <p>タップ操作に最適化された迷路型タワーディフェンスゲームです。</p>
+          <p>アイコンをタップしてからマスをタップするとタワーやトラップを設置できます。</p>
           
           <h2>難易度を選択</h2>
           <div class="row" id="difficulty">
             <button class="chip" data-diff="easy">Easy</button>
             <button class="chip sel" data-diff="normal">Normal</button>
             <button class="chip" data-diff="hard">Hard</button>
-            <button class="chip" data-diff="extreme">Extreme</button>
           </div>
           
-          <h2>ゲームモード</h2>
-          <div class="row" id="gameMode">
-            <button class="chip sel" data-mode="standard">標準</button>
-            <button class="chip" data-mode="endless">エンドレス</button>
-            <button class="chip" data-mode="speed">スピードラン</button>
-          </div>
-          
-          <div class="row" style="justify-content:flex-end;margin-top:16px">
+          <div class="row" style="justify-content:center;margin-top:16px">
             <button class="btn primary" id="btnStartGame">ゲーム開始</button>
           </div>
         </div>
@@ -183,8 +612,7 @@
         <div class="panel">
           <h1 id="resultTitle">結果</h1>
           <p id="resultStats"></p>
-          <div id="highScore" style="margin:12px 0;padding:8px;background:#111827;border-radius:8px;"></div>
-          <div class="row" style="justify-content:flex-end;margin-top:12px">
+          <div class="row" style="justify-content:center;margin-top:12px">
             <button class="btn" id="btnRestart">再プレイ</button>
             <button class="btn primary" id="btnBackTitle">タイトルへ</button>
           </div>
@@ -197,9 +625,6 @@
         <div>💰 <b id="money">0</b></div>
         <div>❤️ <b id="life">0</b></div>
         <div>📶 Wave <b id="wave">0</b>/10</div>
-        <div>⭐ <b id="score">0</b></div>
-        <div>⚡ <b id="skill1CD">0</b>s</div>
-        <div>❄️ <b id="skill2CD">0</b>s</div>
       </div>
       <div id="palette" aria-label="配置パレット"></div>
     </div>
@@ -221,22 +646,10 @@
     clearTimeout(toastTimer); 
     toastTimer = setTimeout(()=>toastEl.classList.remove('show'), duration); 
   }
-  
-  // ヒント表示機能
-  const hintEl = $('#hint');
-  let hintTimer = null;
-  function showHint(msg, x, y, duration=2000) {
-    hintEl.textContent = msg;
-    hintEl.style.left = x + 'px';
-    hintEl.style.top = y + 'px';
-    hintEl.style.display = 'block';
-    clearTimeout(hintTimer);
-    hintTimer = setTimeout(() => hintEl.style.display = 'none', duration);
-  }
 
 /* ===== 定数・ゲーム設定 ===== */ 
 const GRID_W = 12; 
-const GRID_H = 16; 
+const GRID_H = 14; // スマホ画面に収まるように高さを減らしました
 const TILE = ()=>parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tile'));
 
 const START = {x:0, y:Math.floor(GRID_H/2)};
@@ -246,14 +659,6 @@ const DIFFS = {
   easy:   { enemyHP:0.8, enemyNum:0.8, reward:1.2, startMoney: 250, life:25, enemySpd:0.9 },
   normal: { enemyHP:1.0, enemyNum:1.0, reward:1.0, startMoney: 200, life:20, enemySpd:1.0 },
   hard:   { enemyHP:1.3, enemyNum:1.2, reward:0.9, startMoney: 160, life:16, enemySpd:1.1 },
-  extreme:{ enemyHP:1.6, enemyNum:1.4, reward:0.8, startMoney: 120, life:12, enemySpd:1.2 },
-};
-
-// ゲームモード
-const MODES = {
-  standard: { waves: 10, endless: false },
-  endless: { waves: Infinity, endless: true },
-  speed: { waves: 10, endless: false, speedMultiplier: 1.3 }
 };
 
 // パレット定義（タワー/罠/ユニット）
@@ -261,7 +666,6 @@ const ITEMS = [
   { key:'tower_basic',  kind:'tower', name:'基本',   cost:60,  range:2.5, dmg:10,  rof:1.0, iconClass:'tower', upgrades: 3 },
   { key:'tower_sniper', kind:'tower', name:'狙撃',   cost:110, range:5.0, dmg:30,  rof:0.4, iconClass:'tower sniper', upgrades: 2 },
   { key:'tower_mg',     kind:'tower', name:'連射',   cost:85,  range:2.2, dmg:6,   rof:3.0, iconClass:'tower mg', upgrades: 3 },
-  { key:'tower_rocket', kind:'tower', name:'ロケット',cost:140, range:3.5, dmg:45,  rof:0.8, iconClass:'tower rocket', upgrades: 2, splash: 1.2 },
 
   { key:'trap_mine',    kind:'trap',  name:'地雷',   cost:35,  iconClass:'trap mine' },
   { key:'trap_slow',    kind:'trap',  name:'減速',   cost:55,  slow:0.55, iconClass:'trap slow', duration: 8 },
@@ -282,11 +686,6 @@ const WAVES = [
   { list:[ {type:'tank', n:8, gap:1.0}, {type:'elite', n:4, gap:1.5} ] },
   { list:[ {type:'elite', n:8, gap:1.0}, {type:'bike', n:10, gap:0.6} ] },
   { list:[ {type:'boss', n:1, gap:0.0}, {type:'elite', n:4, gap:1.0} ] },
-  // エンドレスモード用の追加ウェーブ
-  { list:[ {type:'inf', n:20, gap:0.5}, {type:'bike', n:10, gap:0.7} ] },
-  { list:[ {type:'tank', n:10, gap:1.0}, {type:'elite', n:6, gap:1.2} ] },
-  { list:[ {type:'boss', n:2, gap:2.0}, {type:'elite', n:8, gap:0.8} ] },
-  { list:[ {type:'inf', n:30, gap:0.4}, {type:'bike', n:15, gap:0.6}, {type:'elite', n:5, gap:1.0} ] },
 ];
 
 const ENEMY_BASE = { 
@@ -297,29 +696,26 @@ const ENEMY_BASE = {
   elite:{ hp: 80,  spd: 1.2, reward: 15, dmg:2, class:'enemy elite' },
 };
 
-// 特殊能力
-const SKILLS = {
-  airStrike: { name: "空爆支援", desc: "指定地点に爆撃を行い範囲ダメージ", cost: 100, cooldown: 20, active: false },
-  freeze: { name: "時間停止", desc: "すべての敵を5秒間凍結させる", cost: 150, cooldown: 30, active: false }
-};
-
 /* ===== グリッド生成 ===== */ 
 const gridEl = $('#grid'); 
 const fieldWrap = $('#fieldWrap');
 
+// スマホ画面に収まるようにリサイズ処理
 function resizeField(){ 
   const vh = window.innerHeight;
   const bar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bar')); 
-  const usableH = Math.max(200, vh - bar - 8); 
-  const usableW = window.innerWidth - 8; 
-  const tileH = Math.floor(usableH / GRID_H); 
-  const tileW = Math.floor(usableW / GRID_W); 
-  const tile = Math.max(28, Math.min(56, Math.min(tileH, tileW)));
-  document.documentElement.style.setProperty('--tile', tile+'px'); 
-  fieldWrap.style.minHeight = `calc(100dvh - ${bar}px)`;
+  const usableH = Math.max(200, vh - bar);
+  const usableW = window.innerWidth;
+  const tileH = Math.floor(usableH / GRID_H);
+  const tileW = Math.floor(usableW / GRID_W);
+  const tile = Math.max(28, Math.min(44, Math.min(tileH, tileW))); // 最大サイズを制限
+  document.documentElement.style.setProperty('--tile', tile+'px');
 } 
+
+// リサイズイベントと初期リサイズ
 window.addEventListener('resize', resizeField);
-resizeField();
+window.addEventListener('load', resizeField);
+setTimeout(resizeField, 100); // 初期化後に再度リサイズ
 
 // ランダムなマップ生成
 function generateMap() {
@@ -429,55 +825,23 @@ const state = {
   paused:false, 
   speed:1, 
   diff:'normal',
-  mode: 'standard',
   money:0, 
   life:20, 
   wave:0,
-  score:0,
   enemies:[], 
   towers:[], 
   units:[], 
   traps:[], 
   bullets:[],
   rockets:[],
-  skills: {
-    airStrike: { ...SKILLS.airStrike, cooldownLeft: 0 },
-    freeze: { ...SKILLS.freeze, cooldownLeft: 0, active: false }
-  },
-  freezeTime: 0,
 };
 
-// ハイスコア管理
-function getHighScore() {
-  return parseInt(localStorage.getItem('mazeTD_highScore') || '0');
-}
-
-function setHighScore(score) {
-  const current = getHighScore();
-  if (score > current) {
-    localStorage.setItem('mazeTD_highScore', score);
-    return true;
-  }
-  return false;
-}
-
 /* ===== UI ===== */ 
-const moneyEl=$('#money'), lifeEl=$('#life'), waveEl=$('#wave'), scoreEl=$('#score');
-const skill1CD=$('#skill1CD'), skill2CD=$('#skill2CD');
-
+const moneyEl=$('#money'), lifeEl=$('#life'), waveEl=$('#wave');
 function refreshStats(){ 
   moneyEl.textContent = state.money|0; 
   lifeEl.textContent = state.life; 
   waveEl.textContent = state.wave; 
-  scoreEl.textContent = state.score;
-  
-  // スキルクールダウン表示
-  skill1CD.textContent = state.skills.airStrike.cooldownLeft > 0 ? state.skills.airStrike.cooldownLeft.toFixed(0) : "Ready";
-  skill2CD.textContent = state.skills.freeze.cooldownLeft > 0 ? state.skills.freeze.cooldownLeft.toFixed(0) : "Ready";
-  
-  // スキルボタンの状態更新
-  $('#btnSkill1').disabled = state.money < state.skills.airStrike.cost || state.skills.airStrike.cooldownLeft > 0;
-  $('#btnSkill2').disabled = state.money < state.skills.freeze.cost || state.skills.freeze.cooldownLeft > 0;
 } 
 
 function buildPalette(){ 
@@ -498,54 +862,83 @@ function buildPalette(){
   }); 
 }
 
-/* ===== 配置（タップ＆ドラッグ） ===== */ 
-let placing = null;
-let placingCell = null;
+/* ===== 配置（タップ方式） ===== */ 
+let selectedItem = null;
 let selectedTower = null;
 
-$('#palette').addEventListener('pointerdown', (e)=>{ 
+// パレットアイテム選択
+$('#palette').addEventListener('click', (e)=>{ 
   const btn = e.target.closest('.item'); 
   if(!btn) return; 
-  e.preventDefault(); 
   const idx = +btn.dataset.index; 
   const item = ITEMS[idx]; 
-  startPlacing(item, e); 
+  
+  if(state.money < item.cost){ 
+    toast('お金が足りません'); 
+    return; 
+  } 
+  
+  // 選択状態を更新
+  $$('.item').forEach(x=>x.classList.remove('sel')); 
+  btn.classList.add('sel');
+  selectedItem = item;
+  
+  // 全てのセルから選択状態をクリア
+  $$('.cell').forEach(c => {
+    c.classList.remove('can-place', 'cannot-place');
+  });
+  
+  // 配置可能なセルをハイライト
+  for(let y=0; y<GRID_H; y++){
+    for(let x=0; x<GRID_W; x++){
+      const cell = $(`.cell[data-x="${x}"][data-y="${y}"]`);
+      if(!cellBlockedForPlacement(x, y)){
+        cell.classList.add('can-place');
+      } else {
+        cell.classList.add('cannot-place');
+      }
+    }
+  }
+  
+  toast(`${item.name}を選択しました。配置したい場所をタップしてください。`, 2000);
 });
 
-// グリッドタップでも配置可能
-gridEl.addEventListener('pointerdown', (e)=>{ 
-  if(!placing) {
-    // タワー選択モード
-    const r = gridEl.getBoundingClientRect(); 
-    const gx = clamp(Math.floor((e.clientX - r.left)/TILE()), 0, GRID_W-1); 
-    const gy = clamp(Math.floor((e.clientY - r.top)/TILE()), 0, GRID_H-1);
-    
+// グリッドタップで配置または選択
+gridEl.addEventListener('click', (e)=>{ 
+  const cell = e.target.closest('.cell'); 
+  if(!cell) return;
+  
+  const x = parseInt(cell.dataset.x); 
+  const y = parseInt(cell.dataset.y);
+  
+  // タワー選択モード
+  if (!selectedItem) {
     // タワーがここにあるか確認
-    const tower = state.towers.find(t => t.x === gx && t.y === gy);
+    const tower = state.towers.find(t => t.x === x && t.y === y);
     if (tower) {
       selectTower(tower);
-      e.preventDefault();
       return;
     }
     
     // ユニットがここにあるか確認
-    const unit = state.units.find(u => u.x === gx && u.y === gy);
+    const unit = state.units.find(u => u.x === x && u.y === y);
     if (unit) {
-      showHint(`ユニット: ${unit.hp}/${unit.hpMax}HP`, e.clientX, e.clientY);
-      e.preventDefault();
+      toast(`ユニット: ${unit.hp}/${unit.hpMax}HP`);
       return;
     }
     
     return; 
   }
   
-  e.preventDefault(); 
-  const r = gridEl.getBoundingClientRect(); 
-  const gx = clamp(Math.floor((e.clientX - r.left)/TILE()), 0, GRID_W-1); 
-  const gy = clamp(Math.floor((e.clientY - r.top)/TILE()), 0, GRID_H-1); 
-  placingCell = {x:gx,y:gy}; 
-  tryPlace(placing.item, gx, gy); 
-  cancelPlacing(); 
+  // 配置モード
+  tryPlace(selectedItem, x, y);
+  
+  // 選択状態をリセット
+  $$('.item').forEach(x=>x.classList.remove('sel'));
+  $$('.cell').forEach(c => {
+    c.classList.remove('can-place', 'cannot-place');
+  });
+  selectedItem = null;
 });
 
 // タワー選択機能
@@ -634,7 +1027,6 @@ function upgradeTower(tower, cost) {
   }
   
   toast(`タワーをLv.${tower.level}にアップグレードしました`);
-  SE.upgrade();
 }
 
 function sellTower(tower, value) {
@@ -658,83 +1050,14 @@ function sellTower(tower, value) {
   paintPath(currentPath);
   
   toast(`タワーを売却して💰${value}を獲得`);
-  SE.sell();
 }
 
 // アップグレードUIを閉じる
-document.addEventListener('pointerdown', (e) => {
+document.addEventListener('click', (e) => {
   if (!e.target.closest('.upgrade-ui') && $('#upgradeUI').style.display === 'block') {
     $('#upgradeUI').style.display = 'none';
   }
 });
-
-function startPlacing(item, e){ 
-  if(state.paused){ toast('一時停止中'); return; } 
-  if(state.money < item.cost){ toast('お金が足りません'); return; } 
-  $$('.item').forEach(x=>x.classList.remove('sel')); 
-  const src = $(`.item[data-key="${item.key}"]`); 
-  if(src) src.classList.add('sel'); 
-  const g=document.createElement('div'); 
-  g.className='ghost'; 
-  const size = item.kind==='trap' && item.key==='trap_slow' ? 34 : 30; 
-  g.style.width = size+'px'; 
-  g.style.height = size+'px'; 
-  gridEl.appendChild(g); 
-  
-  // 範囲表示円の追加
-  const rangeCircle = document.createElement('div');
-  rangeCircle.className = 'range-circle';
-  const range = (item.range || 0) * TILE();
-  rangeCircle.style.width = range*2 + 'px';
-  rangeCircle.style.height = range*2 + 'px';
-  g.appendChild(rangeCircle);
-  
-  placing = { item, ghostEl:g }; 
-  moveGhost(e);
-
-  window.addEventListener('pointermove', moveGhost);
-  window.addEventListener('pointerup', endPlacing, { once:true });
-  window.addEventListener('pointercancel', cancelPlacing, { once:true });
-} 
-
-function moveGhost(e){ 
-  if(!placing) return; 
-  const r = gridEl.getBoundingClientRect(); 
-  const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX); 
-  const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY); 
-  if(clientX==null || clientY==null) return; 
-  const gx = clamp(Math.floor((clientX - r.left)/TILE()), 0, GRID_W-1); 
-  const gy = clamp(Math.floor((clientY - r.top)/TILE()), 0, GRID_H-1); 
-  placingCell = {x:gx,y:gy}; 
-  const cx = gx*TILE() + TILE()/2; 
-  const cy = gy*TILE() + TILE()/2; 
-  placing.ghostEl.style.left = cx+'px'; 
-  placing.ghostEl.style.top = cy+'px'; 
-  
-  // 配置可能かどうかの色フィードバック
-  if (cellBlockedForPlacement(gx, gy)) {
-    placing.ghostEl.style.borderColor = '#ef444455';
-    placing.ghostEl.style.background = '#ef444410';
-  } else {
-    placing.ghostEl.style.borderColor = '#93c5fd55';
-    placing.ghostEl.style.background = '#60a5fa10';
-  }
-} 
-
-function endPlacing(e){ 
-  window.removeEventListener('pointermove', moveGhost); 
-  if(!placingCell){ cancelPlacing(); return; } 
-  tryPlace(placing.item, placingCell.x, placingCell.y); 
-  cancelPlacing(); 
-} 
-
-function cancelPlacing(){ 
-  if(placing){ 
-    placing.ghostEl.remove(); 
-    placing=null; 
-  } 
-  $$('.item').forEach(x=>x.classList.remove('sel')); 
-} 
 
 function cellBlockedForPlacement(x,y){ 
   if((x===START.x&&y===START.y) || (x===GOAL.x&&y===GOAL.y)) return true; 
@@ -743,7 +1066,10 @@ function cellBlockedForPlacement(x,y){
 } 
 
 function tryPlace(item, x, y){ 
-  if(cellBlockedForPlacement(x,y)){ toast('ここには置けません'); return; }
+  if(cellBlockedForPlacement(x,y)){ 
+    toast('ここには置けません'); 
+    return; 
+  }
 
   const temp = map.map(row=>row.slice());
   if(item.kind==='trap'){
@@ -769,13 +1095,10 @@ function tryPlace(item, x, y){
   if(item.kind==='trap'){
     if(item.key==='trap_slow'){ map[y][x]=2; spawnTrap(x,y,'slow',item); }
     else { map[y][x]=3; spawnTrap(x,y,'mine',item); }
-    SE.place();
   }else if(item.kind==='tower'){
     map[y][x]=4; spawnTower(x,y,item); 
-    SE.place();
   }else if(item.kind==='unit'){
     map[y][x]=4; spawnUnit(x,y,item); 
-    SE.place();
   }
 
   currentPath = p; 
@@ -804,8 +1127,7 @@ function spawnTower(x,y,item){
     dmg:item.dmg, 
     rof:item.rof, 
     cd:0, 
-    el,
-    splash: item.splash || 0
+    el
   }; 
   state.towers.push(o); 
 } 
@@ -864,7 +1186,6 @@ function spawnEnemy(type){
     x: START.x*TILE()+TILE()/2, 
     y: START.y*TILE()+TILE()/2, 
     slowTimer:0,
-    frozen: false
   }; 
   
   // 敵用HPバーの追加 (bossとeliteのみ)
@@ -880,133 +1201,19 @@ function spawnEnemy(type){
   state.enemies.push(o); 
 }
 
-function fire(from, to, isRocket = false){ 
-  const cls = isRocket ? 'rocket' : 'bullet';
-  const el = placeEntityEl(cls, from.px/ TILE(), from.py/ TILE()); 
-  const projectile = { 
+function fire(from, to){ 
+  const el = placeEntityEl('bullet', from.px/ TILE(), from.py/ TILE()); 
+  const b = { 
     el, 
     x:from.px, 
     y:from.py, 
     tx:to.x, 
     ty:to.y, 
-    spd: isRocket ? 320 : 480, 
-    dmg: from.dmg,
-    splash: from.splash || 0
+    spd: 480, 
+    dmg: from.dmg
   }; 
-  
-  if (isRocket) {
-    state.rockets.push(projectile);
-  } else {
-    state.bullets.push(projectile);
-  }
-  
-  SE.shoot();
+  state.bullets.push(b);
 }
-
-function createLaser(from, to) {
-  const dx = to.x - from.px;
-  const dy = to.y - from.py;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  const angle = Math.atan2(dy, dx);
-  
-  const el = document.createElement('div');
-  el.className = 'laser';
-  el.style.left = from.px + 'px';
-  el.style.top = from.py + 'px';
-  el.style.width = dist + 'px';
-  el.style.transform = `rotate(${angle}rad)`;
-  gridEl.appendChild(el);
-  
-  // レーザーエフェクト
-  setTimeout(() => {
-    el.remove();
-  }, 100);
-}
-
-/* ===== 特殊能力 ===== */
-function useSkill(skillName, x, y) {
-  const skill = state.skills[skillName];
-  
-  if (state.money < skill.cost || skill.cooldownLeft > 0) {
-    return false;
-  }
-  
-  state.money -= skill.cost;
-  refreshStats();
-  skill.cooldownLeft = skill.cooldown;
-  
-  switch(skillName) {
-    case 'airStrike':
-      // 空爆支援
-      const targets = state.enemies.filter(e => {
-        const dx = e.x - x;
-        const dy = e.y - y;
-        return Math.sqrt(dx*dx + dy*dy) < 100; // 爆発範囲
-      });
-      
-      targets.forEach(e => {
-        e.hp -= 100;
-        if (e.hp <= 0) {
-          state.money += e.reward;
-          state.score += e.reward * 2;
-        }
-      });
-      
-      // 爆発エフェクト
-      const explosion = document.createElement('div');
-      explosion.className = 'explosion';
-      explosion.style.left = x + 'px';
-      explosion.style.top = y + 'px';
-      gridEl.appendChild(explosion);
-      
-      setTimeout(() => {
-        explosion.remove();
-      }, 500);
-      
-      SE.explosion();
-      toast('空爆支援を実行！');
-      break;
-      
-    case 'freeze':
-      // 時間停止
-      state.skills.freeze.active = true;
-      state.freezeTime = 5; // 5秒間凍結
-      
-      state.enemies.forEach(e => {
-        e.frozen = true;
-        e.el.style.filter = 'brightness(0.5) hue-rotate(180deg)';
-      });
-      
-      toast('時間停止発動！');
-      SE.freeze();
-      break;
-  }
-  
-  return true;
-}
-
-// スキルボタンのイベント
-$('#btnSkill1').addEventListener('click', () => {
-  placingSkill = 'airStrike';
-  toast('爆撃地点をタップで選択', 2500);
-});
-
-$('#btnSkill2').addEventListener('click', () => {
-  useSkill('freeze');
-});
-
-// スキルターゲット選択
-let placingSkill = null;
-gridEl.addEventListener('click', (e) => {
-  if (!placingSkill) return;
-  
-  const r = gridEl.getBoundingClientRect();
-  const x = e.clientX - r.left;
-  const y = e.clientY - r.top;
-  
-  useSkill(placingSkill, x, y);
-  placingSkill = null;
-});
 
 /* ===== ウェーブ管理 ===== */ 
 let waveTimer=0, spawnQueue=[]; 
@@ -1014,9 +1221,7 @@ function setupWave(n){
   state.wave = n; 
   refreshStats(); 
   
-  // エンドレスモードの場合、ウェーブをループする
-  const waveIndex = Math.min(n-1, WAVES.length-1);
-  const conf = WAVES[waveIndex]; 
+  const conf = WAVES[n-1]; 
   spawnQueue = []; 
   const mult = DIFFS[state.diff].enemyNum; 
   for(const e of conf.list){ 
@@ -1029,129 +1234,41 @@ function setupWave(n){
 let intermission = true;
 
 function startWave(){ 
-  if(state.wave>=MODES[state.mode].waves && !MODES[state.mode].endless){ 
+  if(state.wave>=10){ 
     return; 
   } 
   intermission=false; 
   setupWave(state.wave+1); 
   toast(`Wave ${state.wave} 開始!`); 
-  SE.wave();
 } 
 
 function endWave(){ 
   const bonus = Math.round(40 * DIFFS[state.diff].reward); 
   state.money += bonus; 
-  state.score += bonus * 5;
   refreshStats(); 
   toast(`Wave ${state.wave} クリア！ +💰${bonus}`); 
   intermission=true; 
-  
-  if(state.wave>=MODES[state.mode].waves && !MODES[state.mode].endless){ 
+  if(state.wave>=10){ 
     victory(); 
   } 
 } 
 
 function victory(){ 
   state.running=false; 
-  BGM.stop(); 
-  
-  // スコア計算
-  const timeBonus = Math.round(1000 * (state.wave / 10));
-  const lifeBonus = state.life * 50;
-  const totalScore = state.score + timeBonus + lifeBonus;
-  
-  // ハイスコア更新
-  const isNewHighScore = setHighScore(totalScore);
-  
-  showResult(true, totalScore, timeBonus, lifeBonus, isNewHighScore); 
+  showResult(true); 
 } 
 
 function defeat(){ 
   state.running=false; 
-  BGM.stop(); 
-  showResult(false, state.score, 0, 0, false); 
+  showResult(false); 
 } 
 
-function showResult(win, score, timeBonus, lifeBonus, isNewHighScore){ 
+function showResult(win){ 
   const res = $('#result'); 
   $('#resultTitle').textContent = win? '勝利！':'敗北…'; 
-  $('#resultStats').textContent = `到達Wave: ${state.wave} / 所持金: ${state.money} / スコア: ${score}`;
-  
-  if (win) {
-    $('#resultStats').textContent += `\nタイムボーナス: +${timeBonus} / ライフボーナス: +${lifeBonus}`;
-  }
-  
-  const highScoreEl = $('#highScore');
-  highScoreEl.innerHTML = `ハイスコア: ${getHighScore()}`;
-  if (isNewHighScore) {
-    highScoreEl.innerHTML += '<br><span style="color:var(--warn)">🎉 ニューハイスコア！</span>';
-  }
-  
+  $('#resultStats').textContent = `到達Wave: ${state.wave} / 所持金: ${state.money}`; 
   res.classList.add('show'); 
 }
-
-/* ===== 簡易オーディオ ===== */
-const AudioKit = (()=>{ 
-  let ctx=null; 
-  let gain; 
-  function init(){ 
-    if(ctx) return; 
-    ctx=new (window.AudioContext||window.webkitAudioContext)(); 
-    gain=ctx.createGain(); 
-    gain.gain.value=0.2; 
-    gain.connect(ctx.destination); 
-  } 
-  function beep(freq=440, dur=0.07, type='square', vol=0.25){ 
-    if(!ctx) return; 
-    const o=ctx.createOscillator(); 
-    const g=ctx.createGain(); 
-    o.type=type; 
-    o.frequency.value=freq; 
-    o.connect(g); 
-    g.gain.value=vol; 
-    g.connect(gain); 
-    o.start(); 
-    o.stop(ctx.currentTime+dur); 
-  } 
-  return { init, beep, get ctx(){return ctx;}, gain(){return gain;} }; 
-})(); 
-
-const SE = { 
-  place: ()=>AudioKit.beep(520,0.06,'triangle',0.18), 
-  shoot: ()=>AudioKit.beep(880,0.03,'square',0.12), 
-  hit:   ()=>AudioKit.beep(240,0.05,'sine',0.2),
-  explosion: ()=>AudioKit.beep(120,0.3,'sawtooth',0.3),
-  freeze: ()=>AudioKit.beep(640,0.2,'sine',0.25),
-  upgrade: ()=>AudioKit.beep(640,0.1,'sine',0.2),
-  sell: ()=>AudioKit.beep(320,0.1,'sine',0.2),
-  wave: ()=>AudioKit.beep(440,0.2,'sine',0.3),
-  laser: ()=>{
-    AudioKit.beep(960,0.1,'sine',0.15);
-    AudioKit.beep(720,0.1,'sine',0.1);
-  }
-};
-
-// BGM
-const BGM = (() => {
-  let audio = null;
-  return {
-    play: () => {
-      if (audio) return;
-      // 簡易BGM（実際のゲームでは適切なBGMファイルを使用）
-      audio = new Audio();
-      audio.loop = true;
-      audio.volume = 0.3;
-      // 実際のプロジェクトではBGMファイルを追加
-      console.log("BGM would play here");
-    },
-    stop: () => {
-      if (audio) {
-        audio.pause();
-        audio = null;
-      }
-    }
-  };
-})();
 
 /* ===== ゲームループ ===== */ 
 let currentPath = null; 
@@ -1166,28 +1283,6 @@ function gameLoop(timestamp){
   if(state.paused) return requestAnimationFrame(gameLoop);
   
   accuTime += delta * state.speed;
-  
-  // スキルクールダウン更新
-  for (const skillName in state.skills) {
-    if (state.skills[skillName].cooldownLeft > 0) {
-      state.skills[skillName].cooldownLeft -= delta;
-      if (state.skills[skillName].cooldownLeft < 0) {
-        state.skills[skillName].cooldownLeft = 0;
-      }
-    }
-  }
-  
-  // 凍結効果の更新
-  if (state.skills.freeze.active) {
-    state.freezeTime -= delta;
-    if (state.freezeTime <= 0) {
-      state.skills.freeze.active = false;
-      state.enemies.forEach(e => {
-        e.frozen = false;
-        e.el.style.filter = '';
-      });
-    }
-  }
   
   // ウェーブ管理
   if(state.running){ 
@@ -1232,11 +1327,7 @@ function gameLoop(timestamp){
       }); 
       if(closest){ 
         tower.cd = 1/tower.rof; 
-        if (tower.key === 'tower_sniper') {
-          createLaser(tower, closest);
-          SE.laser();
-        }
-        fire(tower, closest, tower.key === 'tower_rocket'); 
+        fire(tower, closest); 
       } 
     } 
   }); 
@@ -1276,10 +1367,8 @@ function gameLoop(timestamp){
       state.enemies.forEach(e=>{ 
         if(Math.abs(e.x - b.tx) < 5 && Math.abs(e.y - b.ty) < 5){ 
           e.hp -= b.dmg; 
-          SE.hit();
           if(e.hp <= 0){ 
             state.money += e.reward; 
-            state.score += e.reward;
             e.el.remove(); 
             state.enemies.splice(state.enemies.indexOf(e),1); 
           } 
@@ -1293,64 +1382,8 @@ function gameLoop(timestamp){
     } 
   }); 
   
-  // ロケットの移動と爆発
-  state.rockets.forEach((r,i)=>{ 
-    const dx = r.tx - r.x; 
-    const dy = r.ty - r.y; 
-    const dist = Math.sqrt(dx*dx+dy*dy); 
-    const move = r.spd * delta; 
-    if(move >= dist){ 
-      // 爆発
-      r.el.remove(); 
-      state.rockets.splice(i,1); 
-      
-      // 範囲ダメージ
-      state.enemies.forEach(e=>{ 
-        const edx = e.x - r.tx; 
-        const edy = e.y - r.ty; 
-        const edist = Math.sqrt(edx*edx+edy*edy); 
-        if(edist < r.splash * TILE()){ 
-          // 距離に応じたダメージ減衰
-          const damage = r.dmg * (1 - edist/(r.splash * TILE()));
-          e.hp -= damage; 
-          SE.hit();
-          if(e.hp <= 0){ 
-            state.money += e.reward; 
-            state.score += e.reward;
-            e.el.remove(); 
-            state.enemies.splice(state.enemies.indexOf(e),1); 
-          } 
-        } 
-      }); 
-      
-      // 爆発エフェクト
-      const explosion = document.createElement('div');
-      explosion.className = 'explosion';
-      explosion.style.left = r.tx + 'px';
-      explosion.style.top = r.ty + 'px';
-      gridEl.appendChild(explosion);
-      
-      setTimeout(() => {
-        explosion.remove();
-      }, 500);
-      
-      SE.explosion();
-    }else{ 
-      r.x += dx/dist * move; 
-      r.y += dy/dist * move; 
-      r.el.style.left = r.x+'px'; 
-      r.el.style.top = r.y+'px'; 
-      
-      // ロケットの回転
-      const angle = Math.atan2(dy, dx);
-      r.el.style.transform = `translate(-50%, -50%) rotate(${angle}rad)`;
-    } 
-  }); 
-  
   // 敵の移動
   state.enemies.forEach(e=>{ 
-    if (e.frozen) return; // 凍結中は移動しない
-    
     if(e.pathIndex < e.path.length){ 
       const next = e.path[e.pathIndex]; 
       const tx = next.x*TILE() + TILE()/2; 
@@ -1417,28 +1450,12 @@ function gameLoop(timestamp){
           e.hp -= 50; 
           if(e.hp <= 0){ 
             state.money += e.reward; 
-            state.score += e.reward;
             e.el.remove(); 
             state.enemies.splice(state.enemies.indexOf(e),1); 
           } 
           trap.used = true; 
           trap.el.remove(); 
           state.traps.splice(index,1); 
-          
-          // 地雷爆発エフェクト
-          const explosion = document.createElement('div');
-          explosion.className = 'explosion';
-          explosion.style.left = e.x + 'px';
-          explosion.style.top = e.y + 'px';
-          explosion.style.width = '40px';
-          explosion.style.height = '40px';
-          gridEl.appendChild(explosion);
-          
-          setTimeout(() => {
-            explosion.remove();
-          }, 500);
-          
-          SE.explosion();
         }else if(trap.type==='slow'){ 
           e.slowTimer = trap.duration; 
           trap.used = true; 
@@ -1454,28 +1471,17 @@ function gameLoop(timestamp){
 
 /* ===== 初期化 ===== */ 
 function initGame(){ 
-  AudioKit.init(); 
-  BGM.play();
-  
   state.running=true; 
   state.paused=false; 
   state.money = DIFFS[state.diff].startMoney; 
   state.life = DIFFS[state.diff].life; 
   state.wave = 0; 
-  state.score = 0;
   state.enemies = []; 
   state.towers = []; 
   state.units = []; 
   state.traps = []; 
   state.bullets = []; 
   state.rockets = [];
-  
-  // スキルクールダウンリセット
-  for (const skillName in state.skills) {
-    state.skills[skillName].cooldownLeft = 0;
-    state.skills[skillName].active = false;
-  }
-  state.freezeTime = 0;
   
   // マップ再生成
   const newMap = generateMap();
@@ -1538,18 +1544,10 @@ $$('#difficulty .chip').forEach(chip=>{
   }); 
 }); 
 
-// ゲームモード選択
-$$('#gameMode .chip').forEach(chip=>{ 
-  chip.addEventListener('click', ()=>{ 
-    $$('#gameMode .chip').forEach(c=>c.classList.remove('sel')); 
-    chip.classList.add('sel'); 
-    state.mode = chip.dataset.mode; 
-  }); 
-}); 
-
 // 初期レンダリング
 renderGrid(); 
 buildPalette(); 
+resizeField();
 })(); 
 </script>
 </body>
