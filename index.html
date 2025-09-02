@@ -8,31 +8,29 @@
   <style>
     :root{
       --bg:#0b0f14; --panel:#0f1520; --ink:#e6edf3; --muted:#93a0ad; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
-      --bar: 104px; /* 下部UIバーの高さ */
-      --tile: 44px; /* タイルサイズ（スマホ想定） */
-      --grid-w: 12; /* 横マス数 */
-      --grid-h: 16; /* 縦マス数（下部バーがあるので縦は長め） */
+      --bar: 104px;
+      --tile: 44px;
+      --grid-w: 12;
+      --grid-h: 16;
     }
     *{box-sizing:border-box;touch-action:manipulation}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif}
+    html,body{
+      height:100dvh;margin:0;background:var(--bg);color:var(--ink);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+      overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+    }
     #wrap{min-height:100%;display:grid;grid-template-rows:1fr auto;}
-
-    /* ====== プレイフィールド ====== */
-    #fieldWrap{position:relative;overflow:hidden;border-bottom:1px solid #1f2937}
-    #grid{position:relative;display:grid;grid-template-columns:repeat(var(--grid-w), var(--tile));grid-template-rows:repeat(var(--grid-h), var(--tile));
-      width:calc(var(--grid-w) * var(--tile));height:calc(var(--grid-h) * var(--tile));margin:0 auto;}
+    #fieldWrap{position:relative;overflow:hidden;border-bottom:1px solid #1f2937;touch-action:none}
+    #grid{position:relative;display:grid;grid-template-columns:repeat(var(--grid-w), var(--tile));grid-template-rows:repeat(var(--grid-h), var(--tile));width:calc(var(--grid-w) * var(--tile));height:calc(var(--grid-h) * var(--tile));margin:0 auto;touch-action:none}
     .cell{width:var(--tile);height:var(--tile);border:1px solid #0f172a;background:#0b1220}
     .cell.path{background:#0c253c}
     .cell.start{background:#134e4a}
     .cell.goal{background:#4a1313}
-
-    /* エンティティ（DOM要素） */
     .entity{position:absolute;pointer-events:none;translate:-50% -50%;}
     .enemy{width:28px;height:28px;border-radius:6px;background:#ef4444;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
     .enemy.tank{width:34px;height:34px;background:#b91c1c}
     .enemy.bike{width:24px;height:24px;background:#f97316}
     .enemy.boss{width:46px;height:46px;background:#7f1d1d;outline:3px solid #fecaca}
-
     .tower,.unit{width:30px;height:30px;border-radius:4px;background:#60a5fa;border:2px solid #1d4ed8}
     .tower.sniper{background:#a78bfa;border-color:#6d28d9}
     .tower.mg{background:#34d399;border-color:#059669}
@@ -40,13 +38,8 @@
     .unit.vehicle{background:#cbd5e1;border-color:#475569}
     .trap.mine{width:22px;height:22px;border-radius:50%;background:#f43f5e;border:2px dashed #7f1d1d}
     .trap.slow{width:34px;height:34px;border-radius:6px;background:#1e293b80;border:2px solid #334155}
-
     .bullet{width:6px;height:6px;border-radius:50%;background:#eab308}
-
-    /* 影響範囲のゴースト */
     .ghost{position:absolute;pointer-events:none;border:2px dashed #93c5fd55;border-radius:10px;background:#60a5fa10;translate:-50% -50%;}
-
-    /* ====== 下部UIバー ====== */
     #bar{position:relative;background:var(--panel);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:var(--bar);}
     #stats{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted)}
     #stats b{color:var(--ink)}
@@ -56,13 +49,9 @@
     .item .ico{width:28px;height:28px;border-radius:6px}
     .item .name{font-size:12px;color:#cbd5e1}
     .item .cost{font-size:11px;color:#9aa4b2}
-
-    /* スタート/ポーズなど */
     #ctrls{position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:3}
     .btn{appearance:none;border:none;border-radius:999px;background:#1f2937;color:#e5e7eb;padding:8px 12px;font-size:12px}
     .btn:active{transform:translateY(1px)}
-
-    /* ダイアログ（タイトル/難易度/リザルト） */
     .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:5}
     .overlay.show{display:flex}
     .panel{background:#0f1520;border:1px solid #1f2937;border-radius:16px;max-width:520px;width:92%;padding:16px}
@@ -72,8 +61,6 @@
     .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .chip{border:1px solid #374151;background:#111827;color:#e5e7eb;padding:8px 12px;border-radius:999px;font-size:14px}
     .chip.sel{outline:2px solid #60a5fa}
-
-    /* トースト */
     #toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#111827;border:1px solid #1f2937;color:#e5e7eb;border-radius:999px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;z-index:6}
     #toast.show{opacity:1}
   </style>
@@ -88,8 +75,6 @@
       </div>
       <div id="grid" aria-label="戦場"></div>
       <div id="toast"></div>
-
-      <!-- タイトル/難易度/リザルト用オーバーレイ -->
       <div id="overlay" class="overlay show" role="dialog" aria-modal="true">
         <div class="panel">
           <h1>Mobile TD — 迷路型タワーディフェンス</h1>
@@ -105,7 +90,6 @@
           </div>
         </div>
       </div>
-
       <div id="result" class="overlay" role="dialog" aria-modal="true">
         <div class="panel">
           <h1 id="resultTitle">結果</h1>
@@ -116,30 +100,18 @@
         </div>
       </div>
     </div>
-
-    <!-- 下部UIバー -->
     <div id="bar">
       <div id="stats">
         <div>💰 <b id="money">0</b></div>
         <div>❤️ <b id="life">0</b></div>
         <div>📶 Wave <b id="wave">0</b>/10</div>
       </div>
-      <div id="palette" aria-label="配置パレット">
-        <!-- 動的に生成 -->
-      </div>
+      <div id="palette" aria-label="配置パレット"></div>
     </div>
   </div>
-
 <script>
 (()=>{
   "use strict";
-  /**
-   * Mobile TD v0.1
-   * - 迷路型（プレイヤー配置で経路が変化）
-   * - タップ＆ドラッグ配置（ドラッグしづらい端末向けにタップ2回もサポート）
-   * - 全10Wave / 難易度選択 / シングルプレイ
-   */
-
   /* ===== ユーティリティ ===== */
   const $ = (sel, el=document)=>el.querySelector(sel);
   const $$ = (sel, el=document)=>Array.from(el.querySelectorAll(sel));
@@ -156,9 +128,9 @@
   }
 
   /* ===== 定数・ゲーム設定 ===== */
-  const GRID_W = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grid-w'));
-  const GRID_H = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--grid-h'));
-  const TILE = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tile'));
+  const GRID_W = 12;
+  const GRID_H = 16;
+  const TILE = ()=>parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tile'));
 
   const START = {x:0, y:Math.floor(GRID_H/2)};  // 左中央からスポーン
   const GOAL  = {x:GRID_W-1, y:Math.floor(GRID_H/2)}; // 右中央がゴール
@@ -184,7 +156,6 @@
 
   // ウェーブ構成（敵スポーンテーブル）
   const WAVES = [
-    // type: 'inf'|'bike'|'tank'|'boss'
     { list:[ {type:'inf', n:12, gap:0.7} ] },
     { list:[ {type:'inf', n:16, gap:0.65} ] },
     { list:[ {type:'inf', n:18, gap:0.6} ] },
@@ -206,12 +177,18 @@
 
   /* ===== グリッド生成 ===== */
   const gridEl = $('#grid');
-  // センタリングのためにフィールドラッパの高さを可変にする
+  const fieldWrap = $('#fieldWrap');
+
   function resizeField(){
-    // 画面高さから下部バーを引いた領域で中央寄せ
-    const rect = gridEl.getBoundingClientRect();
-    const wrap = $('#fieldWrap');
-    wrap.style.minHeight = `calc(100vh - var(--bar))`;
+    const vh = window.innerHeight; // 100dvh相当
+    const bar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bar'));
+    const usableH = Math.max(200, vh - bar - 8);
+    const usableW = window.innerWidth - 8;
+    const tileH = Math.floor(usableH / GRID_H);
+    const tileW = Math.floor(usableW / GRID_W);
+    const tile = Math.max(28, Math.min(56, Math.min(tileH, tileW))); // 28〜56pxの範囲で可変
+    document.documentElement.style.setProperty('--tile', tile+'px');
+    fieldWrap.style.minHeight = `calc(100dvh - var(--bar))`;
   }
   window.addEventListener('resize', resizeField);
 
@@ -235,8 +212,6 @@
 
   function renderGrid(){
     gridEl.innerHTML = '';
-    gridEl.style.setProperty('--grid-w', GRID_W);
-    gridEl.style.setProperty('--grid-h', GRID_H);
     for(let y=0;y<GRID_H;y++){
       for(let x=0;x<GRID_W;x++){
         const d = document.createElement('div');
@@ -248,8 +223,6 @@
       }
     }
   }
-  renderGrid();
-  resizeField();
 
   /* ===== 経路探索（A*） ===== */
   function astar(start, goal, mapOverride){
@@ -300,8 +273,6 @@
     return null; // パスがない
   }
 
-  let currentPath = astar(START, GOAL);
-  paintPath(currentPath);
   function paintPath(path){
     $$('.cell').forEach(c=>c.classList.remove('path'));
     if(!path) return;
@@ -341,7 +312,6 @@
       pal.appendChild(d);
     });
   }
-  buildPalette();
 
   /* ===== 配置（タップ＆ドラッグ） ===== */
   let placing = null; // { item, ghostEl }
@@ -349,8 +319,20 @@
 
   $('#palette').addEventListener('pointerdown', (e)=>{
     const btn = e.target.closest('.item'); if(!btn) return;
+    e.preventDefault();
     const idx = +btn.dataset.index; const item = ITEMS[idx];
     startPlacing(item, e);
+  });
+
+  // グリッドタップでも配置可能（ドラッグ不要端末向け）
+  gridEl.addEventListener('pointerdown', (e)=>{
+    if(!placing) return; e.preventDefault();
+    const r = gridEl.getBoundingClientRect();
+    const gx = clamp(Math.floor((e.clientX - r.left)/TILE()), 0, GRID_W-1);
+    const gy = clamp(Math.floor((e.clientY - r.top)/TILE()), 0, GRID_H-1);
+    placingCell = {x:gx,y:gy};
+    tryPlace(placing.item, gx, gy);
+    cancelPlacing();
   });
 
   function startPlacing(item, e){
@@ -368,15 +350,19 @@
     // ドラッグで配置
     window.addEventListener('pointermove', moveGhost);
     window.addEventListener('pointerup', endPlacing, { once:true });
+    window.addEventListener('pointercancel', cancelPlacing, { once:true });
   }
 
   function moveGhost(e){
     if(!placing) return;
     const r = gridEl.getBoundingClientRect();
-    const gx = clamp(Math.floor((e.clientX - r.left)/TILE), 0, GRID_W-1);
-    const gy = clamp(Math.floor((e.clientY - r.top)/TILE), 0, GRID_H-1);
+    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
+    if(clientX==null || clientY==null) return;
+    const gx = clamp(Math.floor((clientX - r.left)/TILE()), 0, GRID_W-1);
+    const gy = clamp(Math.floor((clientY - r.top)/TILE()), 0, GRID_H-1);
     placingCell = {x:gx,y:gy};
-    const cx = gx*TILE + TILE/2; const cy = gy*TILE + TILE/2;
+    const cx = gx*TILE() + TILE()/2; const cy = gy*TILE() + TILE()/2;
     placing.ghostEl.style.left = cx+'px'; placing.ghostEl.style.top = cy+'px';
   }
 
@@ -428,10 +414,11 @@
     if(item.kind==='trap'){
       if(item.key==='trap_slow'){ map[y][x]=2; spawnTrap(x,y,'slow',item); }
       else { map[y][x]=3; spawnTrap(x,y,'mine',item); }
+      SE.place();
     }else if(item.kind==='tower'){
-      map[y][x]=4; spawnTower(x,y,item);
+      map[y][x]=4; spawnTower(x,y,item); SE.place();
     }else if(item.kind==='unit'){
-      map[y][x]=4; spawnUnit(x,y,item);
+      map[y][x]=4; spawnUnit(x,y,item); SE.place();
     }
 
     currentPath = p; paintPath(currentPath);
@@ -440,20 +427,20 @@
   /* ===== エンティティ生成 ===== */
   function placeEntityEl(cls, x, y){
     const el=document.createElement('div'); el.className='entity '+cls;
-    el.style.left = (x*TILE + TILE/2)+'px';
-    el.style.top  = (y*TILE + TILE/2)+'px';
+    el.style.left = (x*TILE() + TILE()/2)+'px';
+    el.style.top  = (y*TILE() + TILE()/2)+'px';
     gridEl.appendChild(el);
     return el;
   }
 
   function spawnTower(x,y,item){
     const el = placeEntityEl(item.iconClass, x,y);
-    const o = { kind:'tower', x, y, px:x*TILE+TILE/2, py:y*TILE+TILE/2, range:item.range*TILE, dmg:item.dmg, rof:item.rof, cd:0, el };
+    const o = { kind:'tower', x, y, px:x*TILE()+TILE()/2, py:y*TILE()+TILE()/2, range:item.range*TILE(), dmg:item.dmg, rof:item.rof, cd:0, el };
     state.towers.push(o);
   }
   function spawnUnit(x,y,item){
     const el = placeEntityEl(item.iconClass, x,y);
-    const o = { kind:'unit', x, y, px:x*TILE+TILE/2, py:y*TILE+TILE/2, range:item.range*TILE, dmg:item.dmg, rof:item.rof, cd:0, el };
+    const o = { kind:'unit', x, y, px:x*TILE()+TILE()/2, py:y*TILE()+TILE()/2, range:item.range*TILE(), dmg:item.dmg, rof:item.rof, cd:0, el };
     state.units.push(o);
   }
   function spawnTrap(x,y,type,item){
@@ -474,16 +461,17 @@
       // 経路上の位置
       path: currentPath.slice(),
       pathIndex:0, // 次のセルのインデックス
-      x: START.x*TILE+TILE/2, y: START.y*TILE+TILE/2,
+      x: START.x*TILE()+TILE()/2, y: START.y*TILE()+TILE()/2,
       slowTimer:0,
     };
     state.enemies.push(o);
   }
 
   function fire(from, to){
-    const el = placeEntityEl('bullet', from.px/ TILE, from.py/ TILE);
+    const el = placeEntityEl('bullet', from.px/ TILE(), from.py/ TILE());
     const b = { el, x:from.px, y:from.py, tx:to.x, ty:to.y, spd: 480, dmg: from.dmg };
     state.bullets.push(b);
+    SE.shoot();
   }
 
   /* ===== ウェーブ管理 ===== */
@@ -507,6 +495,7 @@
     intermission=false;
     setupWave(state.wave+1);
     toast(`Wave ${state.wave} 開始!`);
+    SE.wave();
   }
 
   function endWave(){
@@ -519,10 +508,10 @@
   }
 
   function victory(){
-    state.running=false; showResult(true);
+    state.running=false; BGM.stop(); showResult(true);
   }
   function defeat(){
-    state.running=false; showResult(false);
+    state.running=false; BGM.stop(); showResult(false);
   }
 
   function showResult(win){
@@ -531,6 +520,37 @@
     $('#resultStats').textContent = `到達Wave: ${state.wave} / 所持金: ${state.money}`;
     res.classList.add('show');
   }
+
+  /* ===== 簡易オーディオ ===== */
+  const AudioKit = (()=>{
+    let ctx=null; let gain;
+    function init(){ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)(); gain=ctx.createGain(); gain.gain.value=0.2; gain.connect(ctx.destination); }
+    function beep(freq=440, dur=0.07, type='square', vol=0.25){ if(!ctx) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.gain.value=vol; g.connect(gain); o.start(); o.stop(ctx.currentTime+dur); }
+    return { init, beep, get ctx(){return ctx;}, gain(){return gain;} };
+  })();
+  const SE = {
+    place: ()=>AudioKit.beep(520,0.06,'triangle',0.18),
+    shoot: ()=>AudioKit.beep(880,0.03,'square',0.12),
+    hit:   ()=>AudioKit.beep(240,0.05,'sine',0.1),
+    wave:  ()=>AudioKit.beep(660,0.12,'triangle',0.22)
+  };
+  const BGM = (()=>{
+    // 超簡易BGM：オシレータで和音パッドっぽい音（負荷軽）
+    let nodes=[]; let active=false; let id=null;
+    function play(){ if(active || !AudioKit.ctx) return; active=true;
+      const ctx=AudioKit.ctx; const root=220; const freqs=[root, root*1.25, root*1.5];
+      nodes = freqs.map(f=>{ const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.gain.value=0.03; g.connect(AudioKit.gain()); o.start(); return {o,g}; });
+      // ゆっくりコード進行（IV→V→vi→I）
+      let step=0; id=setInterval(()=>{
+        const ratios=[[1,1.333,1.666],[1.125,1.5,2],[1.333,1.666,2.25],[1,1.25,1.5]];
+        const r = ratios[step%ratios.length];
+        nodes.forEach((ng,i)=>{ ng.o.frequency.setTargetAtTime(root*r[i], ctx.currentTime, 0.3); });
+        step++;
+      }, 3000);
+    }
+    function stop(){ if(!active) return; active=false; if(id) clearInterval(id); id=null; nodes.forEach(ng=>{ try{ng.o.stop();}catch{} }); nodes=[]; }
+    return { play, stop };
+  })();
 
   /* ===== ループ ===== */
   let last=0;
@@ -556,19 +576,20 @@
     }
 
     // 敵の移動
-    for(const e of state.enemies){
+    for(let i=state.enemies.length-1;i>=0;i--){
+      const e = state.enemies[i];
       if(!e.path || e.path.length===0) e.path = currentPath.slice();
       // 次のタイル中心
       const next = e.path[e.pathIndex+1];
       if(!next){
         // ゴール到達
         e.el.remove();
-        state.enemies.splice(state.enemies.indexOf(e),1);
+        state.enemies.splice(i,1);
         state.life -= (e.dmg||1); refreshStats();
         if(state.life<=0){ defeat(); }
-        break;
+        continue;
       }
-      const nx = next.x*TILE+TILE/2, ny = next.y*TILE+TILE/2;
+      const nx = next.x*TILE()+TILE()/2, ny = next.y*TILE()+TILE()/2;
       const dx = nx - e.x, dy = ny - e.y; const dist = Math.hypot(dx,dy);
       let spd = e.spd * 60; // px/s → 調整
       if(e.slowTimer>0){ spd *= 0.5; e.slowTimer -= dt; }
@@ -578,14 +599,14 @@
       if(dist<2){ e.pathIndex++; }
 
       // トラップチェック
-      const cx = Math.floor(e.x/TILE), cy = Math.floor(e.y/TILE);
+      const cx = Math.floor(e.x/TILE()), cy = Math.floor(e.y/TILE());
       const cell = map[cy]?.[cx];
       if(cell===2){ // 減速
         e.slowTimer = 0.6;
       }else if(cell===3){ // 地雷
         map[cy][cx]=0; // 使用済み
-        const tr = state.traps.find(t=>t.x===cx&&t.y===cy&&t.type==='mine');
-        if(tr){ tr.el.remove(); state.traps.splice(state.traps.indexOf(tr),1); }
+        const trIndex = state.traps.findIndex(t=>t.x===cx&&t.y===cy&&t.type==='mine');
+        if(trIndex>=0){ state.traps[trIndex].el.remove(); state.traps.splice(trIndex,1); }
         damageEnemy(e, 90);
       }
     }
@@ -599,7 +620,7 @@
       for(const e of state.enemies){
         const d = Math.hypot(e.x - s.px, e.y - s.py);
         if(d<=s.range){
-          const prog = e.pathIndex + d/ (TILE*1.0);
+          const prog = e.pathIndex + d/ (TILE()*1.0);
           if(prog>best){ best=prog; target=e; }
         }
       }
@@ -631,10 +652,11 @@
   }
 
   function damageEnemy(e, dmg){
-    e.hp -= dmg; flashEl(e.el);
+    e.hp -= dmg; flashEl(e.el); SE.hit();
     if(e.hp<=0){
       e.el.remove();
-      state.enemies.splice(state.enemies.indexOf(e),1);
+      const idx = state.enemies.indexOf(e);
+      if(idx>=0) state.enemies.splice(idx,1);
       state.money += e.reward; refreshStats();
     }
   }
@@ -655,7 +677,7 @@
     e.target.textContent = `速度×${state.speed}`;
   });
 
-  // 難易度選択と開始
+  // 難易度選択と開始（ここでAudio初期化）
   let chosenDiff = 'normal';
   $('#difficulty').addEventListener('click', (e)=>{
     const c = e.target.closest('.chip'); if(!c) return;
@@ -663,6 +685,7 @@
   });
 
   $('#btnStartGame').addEventListener('click', ()=>{
+    AudioKit.init(); BGM.play();
     const d = DIFFS[chosenDiff];
     Object.assign(state, { running:true, paused:false, speed:1, diff:chosenDiff, money:d.startMoney, life:d.life, wave:0 });
     refreshStats();
@@ -675,6 +698,18 @@
     location.reload();
   });
 
+  /* ===== 初期化 ===== */
+  function init(){
+    resizeField();
+    renderGrid();
+    currentPath = astar(START, GOAL);
+    paintPath(currentPath);
+    buildPalette();
+    refreshStats();
+  }
+
+  let currentPath = null;
+  init();
 })();
 </script>
 </body>
