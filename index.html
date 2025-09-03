@@ -23,6 +23,7 @@
     #fieldWrap{position:relative;overflow:hidden;border-bottom:1px solid #1f2937;touch-action:none}
     #grid{position:relative;display:grid;grid-template-columns:repeat(var(--grid-w), var(--tile));grid-template-rows:repeat(var(--grid-h), var(--tile));width:calc(var(--grid-w) * var(--tile));height:calc(var(--grid-h) * var(--tile));margin:0 auto;touch-action:none}
     .cell{width:var(--tile);height:var(--tile);border:1px solid #0f172a;background:#0b1220}
+    .cell.wall{background:#0a1524;border-color:#0a1220}
     .cell.path{background:#0c253c}
     .cell.start{background:#134e4a}
     .cell.goal{background:#4a1313}
@@ -196,11 +197,11 @@
   function createBaseMap(){
     // 0:空き 1:障害（壁） 2:スロー 3:地雷 4:タワー/ユニット
     const arr = Array.from({length:GRID_H},()=>Array(GRID_W).fill(0));
-    // デフォで通り道が一本あるよう、上下に低い壁を置く（迷路らしさ）
+    // 迷路感：上下に低い壁（ところどころ欠け）
     for(let x=2;x<GRID_W-2;x++){
       const y1 = Math.floor(GRID_H/2)-3;
       const y2 = Math.floor(GRID_H/2)+3;
-      if(x % 4 !== 0){ // ところどころ欠けを作る
+      if(x % 4 !== 0){
         arr[y1][x] = 1;
         arr[y2][x] = 1;
       }
@@ -217,6 +218,7 @@
         const d = document.createElement('div');
         d.className = 'cell';
         d.dataset.x = x; d.dataset.y = y;
+        if(map[y][x]===1) d.classList.add('wall');     // ★ 壁の可視化
         if((x===START.x && y===START.y)) d.classList.add('start');
         if((x===GOAL.x && y===GOAL.y)) d.classList.add('goal');
         gridEl.appendChild(d);
@@ -246,7 +248,7 @@
     }
 
     while(open.length){
-      // 最小fのノードを取り出す
+      // 最小fのノード
       let best=0; for(let i=1;i<open.length;i++){ if(open[i].f<open[best].f) best=i; }
       const cur=open.splice(best,1)[0];
       if(cur.x===goal.x && cur.y===goal.y){
@@ -270,7 +272,7 @@
         }
       }
     }
-    return null; // パスがない
+    return null; // パスなし
   }
 
   function paintPath(path){
@@ -425,10 +427,16 @@
   }
 
   /* ===== エンティティ生成 ===== */
-  function placeEntityEl(cls, x, y){
+  // ★ ピクセル座標モード追加（isPixel=true で直接 left/top をピクセル指定）
+  function placeEntityEl(cls, x, y, isPixel=false){
     const el=document.createElement('div'); el.className='entity '+cls;
-    el.style.left = (x*TILE() + TILE()/2)+'px';
-    el.style.top  = (y*TILE() + TILE()/2)+'px';
+    if(isPixel){
+      el.style.left = x+'px';
+      el.style.top  = y+'px';
+    }else{
+      el.style.left = (x*TILE() + TILE()/2)+'px';
+      el.style.top  = (y*TILE() + TILE()/2)+'px';
+    }
     gridEl.appendChild(el);
     return el;
   }
@@ -467,8 +475,9 @@
     state.enemies.push(o);
   }
 
+  // ★ 弾が右にズレる不具合修正：ピクセル座標で生成
   function fire(from, to){
-    const el = placeEntityEl('bullet', from.px/ TILE(), from.py/ TILE());
+    const el = placeEntityEl('bullet', from.px, from.py, true); // isPixel=true
     const b = { el, x:from.px, y:from.py, tx:to.x, ty:to.y, spd: 480, dmg: from.dmg };
     state.bullets.push(b);
     SE.shoot();
@@ -525,7 +534,7 @@
   const AudioKit = (()=>{
     let ctx=null; let gain;
     function init(){ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)(); gain=ctx.createGain(); gain.gain.value=0.2; gain.connect(ctx.destination); }
-    function beep(freq=440, dur=0.07, type='square', vol=0.25){ if(!ctx) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.gain.value=vol; g.connect(gain); o.start(); o.stop(ctx.currentTime+dur); }
+    function beep(freq=440, dur=0.07, type='square', vol=0.25){ if(!ctx) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=f; o.connect(g); g.gain.value=vol; g.connect(gain); o.start(); o.stop(ctx.currentTime+dur); }
     return { init, beep, get ctx(){return ctx;}, gain(){return gain;} };
   })();
   const SE = {
@@ -632,7 +641,7 @@
       const b=state.bullets[i];
       const dx=b.tx - b.x, dy=b.ty - b.y; const dist=Math.hypot(dx,dy);
       const step = Math.min(dist, b.spd*dt);
-      b.x += dx/dist*step; b.y += dy/dist*step;
+      b.x += dx/(dist||1)*step; b.y += dy/(dist||1)*step;
       b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
       if(dist<6){
         // 近い敵を検索（命中処理）
