@@ -138,7 +138,7 @@
   function toast(msg){
     toastEl.textContent = msg;
     toastEl.classList.add('show');
-    clearTimeout(toastimer);
+    clearTimeout(toastTimer);
     toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1200);
   }
 
@@ -467,9 +467,12 @@
 
   function fire(from, to, isEnemy=false){
     const className = isEnemy ? 'enemy-bullet' : 'bullet';
-    const el = placeEntityEl(className, from.x/TILE(), from.y/TILE());
+    const fromX = from.px ?? from.x;
+    const fromY = from.py ?? from.y;
+    const el = placeEntityEl(className, fromX/TILE(), fromY/TILE());
     const speed = isEnemy ? 320 : 480;
-    const b = { el, x:from.x, y:from.y, tx:to.px, ty:to.py, spd: speed, dmg: from.atkDmg, isEnemy };
+    const dmg = isEnemy ? from.atkDmg : from.dmg;
+    const b = { el, x:fromX, y:fromY, tx:to.px, ty:to.py, spd: speed, dmg, isEnemy, target: to };
     state.bullets.push(b);
     if(!isEnemy) SE.shoot();
   }
@@ -638,14 +641,19 @@
         const d = Math.hypot(e.x - s.px, e.y - s.py);
         if(d<=s.range && d<best){ best=d; target=e; }
       }
-      if(target){ fire({px:s.px, py:s.py, dmg:s.dmg}, target, false); s.cd = 1.0/ s.rof; }
+      if(target){ fire(s, target, false); s.cd = 1.0/ s.rof; }
     }
 
     // Bullet movement
     for(let i=state.bullets.length-1;i>=0;i--){
       const b=state.bullets[i];
-      const targetX = b.isEnemy ? b.tx : state.enemies.find(e=>e.x === b.tx && e.y === b.ty)?.x ?? b.tx;
-      const targetY = b.isEnemy ? b.ty : state.enemies.find(e=>e.x === b.tx && e.y === b.ty)?.y ?? b.ty;
+      let targetX = b.target.px;
+      let targetY = b.target.py;
+
+      if (!b.isEnemy) {
+        targetX = b.target.x;
+        targetY = b.target.y;
+      }
       
       const dx=targetX - b.x, dy=targetY - b.y;
       const dist=Math.hypot(dx,dy);
@@ -655,11 +663,9 @@
       
       if(dist < 8){
         if(b.isEnemy){
-            const hitTower = state.towers.find(t => Math.hypot(t.px - b.x, t.py - b.y) < 15);
-            if(hitTower) damageTower(hitTower, b.dmg);
+          if(state.towers.includes(b.target)) damageTower(b.target, b.dmg);
         } else {
-            const hitEnemy = state.enemies.find(e => Math.hypot(e.x - b.x, e.y - b.y) < 15);
-            if(hitEnemy) damageEnemy(hitEnemy, b.dmg);
+          if(state.enemies.includes(b.target)) damageEnemy(b.target, b.dmg);
         }
         b.el.remove(); state.bullets.splice(i,1);
       }
