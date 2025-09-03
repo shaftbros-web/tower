@@ -1,596 +1,621 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Mobile TD v1.0 — シンプルタワーディフェンス（現代ミリタリー）</title>
-  <meta name="description" content="スマホ向け：シンプルタワーディフェンス。タップで配置、全10ウェーブ、防衛できたら勝ち。" />
-  <style>
-    :root{
-      --bg:#0b0f14; --panel:#0f1520; --ink:#e6edf3; --muted:#93a0ad; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
-      --bar: 104px;
-      --tile: 44px;
-      --grid-w: 12;
-      --grid-h: 16;
-    }
-    *{box-sizing:border-box;touch-action:manipulation}
-    html,body{
-      height:100dvh;margin:0;background:var(--bg);color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-      overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
-    }
-    #wrap{min-height:100%;display:grid;grid-template-rows:1fr auto;}
-    #fieldWrap{position:relative;overflow:hidden;border-bottom:1px solid #1f2937;touch-action:none}
-    #grid{position:relative;display:grid;grid-template-columns:repeat(var(--grid-w), var(--tile));grid-template-rows:repeat(var(--grid-h), var(--tile));width:calc(var(--grid-w) * var(--tile));height:calc(var(--grid-h) * var(--tile));margin:0 auto;touch-action:none}
-    .cell{width:var(--tile);height:var(--tile);border:1px solid #0f172a;background:#0b1220}
-    .cell.start{background:#134e4a}
-    .cell.goal{background:#4a1313}
-    .entity{position:absolute;pointer-events:none;translate:-50% -50%;}
-    .enemy{width:28px;height:28px;border-radius:6px;background:#ef4444;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
-    .enemy.tank{width:34px;height:34px;background:#b91c1c}
-    .enemy.bike{width:24px;height:24px;background:#f97316}
-    .enemy.boss{width:46px;height:46px;background:#7f1d1d;outline:3px solid #fecaca}
-    .tower{width:30px;height:30px;border-radius:4px;background:#60a5fa;border:2px solid #1d4ed8}
-    .tower.sniper{background:#a78bfa;border-color:#6d28d9}
-    .tower.mg{background:#34d399;border-color:#059669}
-    .trap.mine{width:22px;height:22px;border-radius:50%;background:#f43f5e;border:2px dashed #7f1d1d}
-    .trap.slow{width:34px;height:34px;border-radius:6px;background:#1e293b80;border:2px solid #334155}
-    .bullet{width:6px;height:6px;border-radius:50%;background:#eab308}
-    .ghost{position:absolute;pointer-events:none;border:2px dashed #93c5fd55;border-radius:10px;background:#60a5fa10;translate:-50% -50%;}
-    #bar{position:relative;background:var(--panel);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:var(--bar);}
-    #stats{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted)}
-    #stats b{color:var(--ink)}
-    #palette{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .item{display:flex;flex-direction:column;align-items:center;gap:4px;background:#111827;border:1px solid #1f2937;padding:6px 8px;border-radius:10px;min-width:62px}
-    .item.sel{outline:2px solid #60a5fa}
-    .item .ico{width:28px;height:28px;border-radius:6px}
-    .item .name{font-size:12px;color:#cbd5e1}
-    .item .cost{font-size:11px;color:#9aa4b2}
-    #ctrls{position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:3}
-    .btn{appearance:none;border:none;border-radius:999px;background:#1f2937;color:#e5e7eb;padding:8px 12px;font-size:12px}
-    .btn:active{transform:translateY(1px)}
-    .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:5}
-    .overlay.show{display:flex}
-    .panel{background:#0f1520;border:1px solid #1f2937;border-radius:16px;max-width:520px;width:92%;padding:16px}
-    .panel h1{font-size:20px;margin:0 0 8px}
-    .panel h2{font-size:16px;margin:10px 0 6px;color:#cbd5e1}
-    .panel p{margin:4px 0;color:#9aa4b2}
-    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .chip{border:1px solid #374151;background:#111827;color:#e5e7eb;padding:8px 12px;border-radius:999px;font-size:14px}
-    .chip.sel{outline:2px solid #60a5fa}
-    #toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#111827;border:1px solid #1f2937;color:#e5e7eb;border-radius:999px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;z-index:6}
-    #toast.show{opacity:1}
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mobile TD v2.0 — シンプルタワーディフェンス（現代ミリタリー）</title>
+  <meta name="description" content="スマホ向け：シンプルタワーディフェンス。タップで配置、全10ウェーブ、防衛できたら勝ち。" />
+  <style>
+    :root{
+      --bg:#0b0f14; --panel:#0f1520; --ink:#e6edf3; --muted:#93a0ad; --ok:#10b981; --warn:#f59e0b; --bad:#ef4444;
+      --bar: 104px;
+      --tile: 44px;
+      --grid-w: 12;
+      --grid-h: 16;
+    }
+    *{box-sizing:border-box;touch-action:manipulation}
+    html,body{
+      height:100dvh;margin:0;background:var(--bg);color:var(--ink);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+      overflow:hidden;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+    }
+    #wrap{min-height:100%;display:grid;grid-template-rows:1fr auto;}
+    #fieldWrap{position:relative;overflow:hidden;border-bottom:1px solid #1f2937;touch-action:none}
+    #grid{position:relative;display:grid;grid-template-columns:repeat(var(--grid-w), var(--tile));grid-template-rows:repeat(var(--grid-h), var(--tile));width:calc(var(--grid-w) * var(--tile));height:calc(var(--grid-h) * var(--tile));margin:0 auto;touch-action:none}
+    .cell{width:var(--tile);height:var(--tile);border:1px solid #0f172a;background:#0b1220}
+    .cell.start{background:#134e4a}
+    .cell.goal{background:#4a1313}
+    .entity{position:absolute;pointer-events:none;translate:-50% -50%;}
+    .enemy{width:28px;height:28px;border-radius:6px;background:#ef4444;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+    .enemy.tank{width:34px;height:34px;background:#b91c1c}
+    .enemy.bike{width:24px;height:24px;background:#f97316}
+    .enemy.boss{width:46px;height:46px;background:#7f1d1d;outline:3px solid #fecaca}
+    .tower{width:30px;height:30px;border-radius:4px;background:#60a5fa;border:2px solid #1d4ed8}
+    .tower.sniper{background:#a78bfa;border-color:#6d28d9}
+    .tower.mg{background:#34d399;border-color:#059669}
+    .trap.mine{width:22px;height:22px;border-radius:50%;background:#f43f5e;border:2px dashed #7f1d1d}
+    .trap.slow{width:34px;height:34px;border-radius:6px;background:#1e293b80;border:2px solid #334155}
+    .bullet{width:6px;height:6px;border-radius:50%;background:#eab308}
+    .ghost{position:absolute;pointer-events:none;border:2px dashed #93c5fd55;border-radius:10px;background:#60a5fa10;translate:-50% -50%; z-index: 10;}
+    .explosion{position:absolute;pointer-events:none;translate:-50% -50%;width:20px;height:20px;border-radius:50%;background:var(--warn);animation:explodeAnim .3s ease-out forwards;z-index:4;}
+    @keyframes explodeAnim{from{transform:scale(.2);opacity:1}to{transform:scale(2.5);opacity:0}}
+    #bar{position:relative;background:var(--panel);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:var(--bar);}
+    #stats{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--muted)}
+    #stats b{color:var(--ink)}
+    #palette{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .item{display:flex;flex-direction:column;align-items:center;gap:4px;background:#111827;border:1px solid #1f2937;padding:6px 8px;border-radius:10px;min-width:62px}
+    .item.sel{outline:2px solid #60a5fa}
+    .item .ico{width:28px;height:28px;border-radius:6px}
+    .item .name{font-size:12px;color:#cbd5e1}
+    .item .cost{font-size:11px;color:#9aa4b2}
+    #ctrls{position:absolute;left:10px;top:10px;display:flex;gap:8px;z-index:3}
+    .btn{appearance:none;border:none;border-radius:999px;background:#1f2937;color:#e5e7eb;padding:8px 12px;font-size:12px}
+    .btn:active{transform:translateY(1px)}
+    .overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);z-index:5}
+    .overlay.show{display:flex}
+    .panel{background:#0f1520;border:1px solid #1f2937;border-radius:16px;max-width:520px;width:92%;padding:16px}
+    .panel h1{font-size:20px;margin:0 0 8px}
+    .panel h2{font-size:16px;margin:10px 0 6px;color:#cbd5e1}
+    .panel p{margin:4px 0;color:#9aa4b2}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .chip{border:1px solid #374151;background:#111827;color:#e5e7eb;padding:8px 12px;border-radius:999px;font-size:14px}
+    .chip.sel{outline:2px solid #60a5fa}
+    #toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:#111827;border:1px solid #1f2937;color:#e5e7eb;border-radius:999px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .2s;z-index:6}
+    #toast.show{opacity:1}
+  </style>
 </head>
 <body>
-  <div id="wrap">
-    <div id="fieldWrap">
-      <div id="ctrls">
-        <button class="btn" id="btnStartWave">Wave開始</button>
-        <button class="btn" id="btnPause">一時停止</button>
-        <button class="btn" id="btnSpeed">速度×1</button>
-      </div>
-      <div id="grid" aria-label="戦場"></div>
-      <div id="toast"></div>
-      <div id="overlay" class="overlay show" role="dialog" aria-modal="true">
-        <div class="panel">
-          <h1>Mobile TD — タワーディフェンス</h1>
-          <p>タップでタワー/罠を配置。全10ウェーブを防衛せよ！</p>
+  <div id="wrap">
+    <div id="fieldWrap">
+      <div id="ctrls">
+        <button class="btn" id="btnStartWave">Wave開始</button>
+        <button class="btn" id="btnPause">一時停止</button>
+        <button class="btn" id="btnSpeed">速度×1</button>
+      </div>
+      <div id="grid" aria-label="戦場"></div>
+      <div id="toast"></div>
+      <div id="overlay" class="overlay show" role="dialog" aria-modal="true">
+        <div class="panel">
+          <h1>Mobile TD — タワーディフェンス</h1>
+          <p>タップでタワー/罠を配置。全10ウェーブを防衛せよ！</p>
           <br>
           <p style="font-size: 14px;">
             <b>タワー</b>：固定砲台。敵を攻撃し、敵の経路を塞ぎます。<br>
             <b>罠</b>：敵が踏むと効果を発揮する使い捨ての設置物です。
           </p>
-          <h2>難易度を選択</h2>
-          <div class="row" id="difficulty">
-            <button class="chip" data-diff="easy">Easy</button>
-            <button class="chip sel" data-diff="normal">Normal</button>
-            <button class="chip" data-diff="hard">Hard</button>
-          </div>
-          <div class="row" style="justify-content:flex-end;margin-top:12px">
-            <button class="btn" id="btnStartGame">ゲーム開始</button>
-          </div>
-        </div>
-      </div>
-      <div id="result" class="overlay" role="dialog" aria-modal="true">
-        <div class="panel">
-          <h1 id="resultTitle">結果</h1>
-          <p id="resultStats"></p>
-          <div class="row" style="justify-content:flex-end;margin-top:12px">
-            <button class="btn" id="btnBackTitle">タイトルへ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="bar">
-      <div id="stats">
-        <div>💰 <b id="money">0</b></div>
-        <div>❤️ <b id="life">0</b></div>
-        <div>📶 Wave <b id="wave">0</b>/10</div>
-      </div>
-      <div id="palette" aria-label="配置パレット"></div>
-    </div>
-  </div>
+          <h2>難易度を選択</h2>
+          <div class="row" id="difficulty">
+            <button class="chip" data-diff="easy">Easy</button>
+            <button class="chip sel" data-diff="normal">Normal</button>
+            <button class="chip" data-diff="hard">Hard</button>
+          </div>
+          <div class="row" style="justify-content:flex-end;margin-top:12px">
+            <button class="btn" id="btnStartGame">ゲーム開始</button>
+          </div>
+        </div>
+      </div>
+      <div id="result" class="overlay" role="dialog" aria-modal="true">
+        <div class="panel">
+          <h1 id="resultTitle">結果</h1>
+          <p id="resultStats"></p>
+          <div class="row" style="justify-content:flex-end;margin-top:12px">
+            <button class="btn" id="btnBackTitle">タイトルへ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="bar">
+      <div id="stats">
+        <div>💰 <b id="money">0</b></div>
+        <div>❤️ <b id="life">0</b></div>
+        <div>📶 Wave <b id="wave">0</b>/10</div>
+      </div>
+      <div id="palette" aria-label="配置パレット"></div>
+    </div>
+  </div>
 <script>
 (()=>{
-  "use strict";
-  /* ===== Utilities ===== */
-  const $ = (sel, el=document)=>el.querySelector(sel);
-  const $$ = (sel, el=document)=>Array.from(el.querySelectorAll(sel));
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+  "use strict";
+  /* ===== Utilities ===== */
+  const $ = (sel, el=document)=>el.querySelector(sel);
+  const $$ = (sel, el=document)=>Array.from(el.querySelectorAll(sel));
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
 
-  const toastEl = $('#toast');
-  let toastTimer=null;
-  function toast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1200);
-  }
+  const toastEl = $('#toast');
+  let toastTimer=null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1200);
+  }
 
-  /* ===== Constants and Game Settings ===== */
-  const GRID_W = 12;
-  const GRID_H = 16;
-  const TILE = ()=>parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tile'));
+  /* ===== Constants and Game Settings ===== */
+  const GRID_W = 12;
+  const GRID_H = 16;
+  const TILE = ()=>parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tile'));
 
-  const START = {x:0, y:Math.floor(GRID_H/2)};
-  const GOAL  = {x:GRID_W-1, y:Math.floor(GRID_H/2)};
+  const START = {x:0, y:Math.floor(GRID_H/2)};
+  const GOAL  = {x:GRID_W-1, y:Math.floor(GRID_H/2)};
 
-  const DIFFS = {
-    easy:   { enemyHP:0.9, enemyNum:0.9, reward:1.15, startMoney: 220, life:24 },
-    normal: { enemyHP:1.0, enemyNum:1.0, reward:1.0,  startMoney: 180, life:20 },
-    hard:   { enemyHP:1.2, enemyNum:1.15,reward:0.9,  startMoney: 150, life:18 },
-  };
+  const DIFFS = {
+    easy:   { enemyHP:0.9, enemyNum:0.9, reward:1.15, startMoney: 220, life:24 },
+    normal: { enemyHP:1.0, enemyNum:1.0, reward:1.0,  startMoney: 180, life:20 },
+    hard:   { enemyHP:1.2, enemyNum:1.15,reward:0.9,  startMoney: 150, life:18 },
+  };
 
-  const ITEMS = [
-    { key:'tower_basic',  kind:'tower', name:'基本',   cost:60,  range:2.5, dmg:10,  rof:1.0, iconClass:'tower' },
-    { key:'tower_sniper', kind:'tower', name:'狙撃',   cost:110, range:5.0, dmg:30,  rof:0.4, iconClass:'tower sniper' },
-    { key:'tower_mg',     kind:'tower', name:'連射',   cost:85,  range:2.2, dmg:6,   rof:3.0, iconClass:'tower mg' },
-    { key:'trap_mine',    kind:'trap',  name:'地雷',   cost:35,  iconClass:'trap mine' },
-    { key:'trap_slow',    kind:'trap',  name:'減速',   cost:55,  slow:0.55, iconClass:'trap slow' },
-  ];
+  const ITEMS = [
+    { key:'tower_basic',  kind:'tower', name:'基本',   cost:60,  range:2.5, dmg:10,  rof:1.0, iconClass:'tower' },
+    { key:'tower_sniper', kind:'tower', name:'狙撃',   cost:110, range:5.0, dmg:30,  rof:0.4, iconClass:'tower sniper' },
+    { key:'tower_mg',     kind:'tower', name:'連射',   cost:85,  range:2.2, dmg:6,   rof:3.0, iconClass:'tower mg' },
+    { key:'trap_mine',    kind:'trap',  name:'地雷',   cost:35,  iconClass:'trap mine' },
+    { key:'trap_slow',    kind:'trap',  name:'減速',   cost:55,  slow:0.55, iconClass:'trap slow' },
+  ];
 
-  const WAVES = [
-    { list:[ {type:'inf', n:12, gap:0.7} ] },
-    { list:[ {type:'inf', n:16, gap:0.65} ] },
-    { list:[ {type:'inf', n:18, gap:0.6} ] },
-    { list:[ {type:'inf', n:16, gap:0.5},{type:'bike', n:6, gap:0.9} ] },
-    { list:[ {type:'bike', n:10, gap:0.8},{type:'inf', n:10, gap:0.6} ] },
-    { list:[ {type:'bike', n:14, gap:0.7} ] },
-    { list:[ {type:'tank', n:5, gap:1.2},{type:'bike', n:8, gap:0.8} ] },
-    { list:[ {type:'tank', n:6, gap:1.1},{type:'inf', n:12, gap:0.6} ] },
-    { list:[ {type:'tank', n:8, gap:1.0} ] },
-    { list:[ {type:'boss', n:1, gap:0.0} ] },
-  ];
+  const WAVES = [
+    { list:[ {type:'inf', n:12, gap:0.7} ] },
+    { list:[ {type:'inf', n:16, gap:0.65} ] },
+    { list:[ {type:'inf', n:18, gap:0.6} ] },
+    { list:[ {type:'inf', n:16, gap:0.5},{type:'bike', n:6, gap:0.9} ] },
+    { list:[ {type:'bike', n:10, gap:0.8},{type:'inf', n:10, gap:0.6} ] },
+    { list:[ {type:'bike', n:14, gap:0.7} ] },
+    { list:[ {type:'tank', n:5, gap:1.2},{type:'bike', n:8, gap:0.8} ] },
+    { list:[ {type:'tank', n:6, gap:1.1},{type:'inf', n:12, gap:0.6} ] },
+    { list:[ {type:'tank', n:8, gap:1.0} ] },
+    { list:[ {type:'boss', n:1, gap:0.0} ] },
+  ];
 
-  const ENEMY_BASE = {
-    inf:  { hp: 30,  spd: 1.0, reward: 6,  dmg:1, class:'enemy' },
-    bike: { hp: 26,  spd: 1.8, reward: 8,  dmg:1, class:'enemy bike' },
-    tank: { hp: 180, spd: 0.6, reward: 20, dmg:2, class:'enemy tank' },
-    boss: { hp: 1200,spd: 0.5, reward: 120,dmg:5, class:'enemy boss' },
-  };
+  const ENEMY_BASE = {
+    inf:  { hp: 30,  spd: 1.0, reward: 6,  dmg:1, class:'enemy' },
+    bike: { hp: 26,  spd: 1.8, reward: 8,  dmg:1, class:'enemy bike' },
+    tank: { hp: 180, spd: 0.6, reward: 20, dmg:2, class:'enemy tank' },
+    boss: { hp: 1200,spd: 0.5, reward: 120,dmg:5, class:'enemy boss' },
+  };
 
-  /* ===== Grid Creation ===== */
-  const gridEl = $('#grid');
-  const fieldWrap = $('#fieldWrap');
+  /* ===== Grid and Pathfinding ===== */
+  const gridEl = $('#grid');
+  const fieldWrap = $('#fieldWrap');
 
-  function resizeField(){
-    const vh = window.innerHeight;
-    const bar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bar'));
-    const usableH = Math.max(200, vh - bar - 8);
-    const usableW = window.innerWidth - 8;
-    const tileH = Math.floor(usableH / GRID_H);
-    const tileW = Math.floor(usableW / GRID_W);
-    const tile = Math.max(28, Math.min(56, Math.min(tileH, tileW)));
-    document.documentElement.style.setProperty('--tile', tile+'px');
-    fieldWrap.style.minHeight = `calc(100dvh - var(--bar))`;
-  }
-  window.addEventListener('resize', resizeField);
+  function resizeField(){
+    const vh = window.innerHeight;
+    const bar = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--bar'));
+    const usableH = Math.max(200, vh - bar - 8);
+    const usableW = window.innerWidth - 8;
+    const tileH = Math.floor(usableH / GRID_H);
+    const tileW = Math.floor(usableW / GRID_W);
+    const tile = Math.max(28, Math.min(56, Math.min(tileH, tileW)));
+    document.documentElement.style.setProperty('--tile', tile+'px');
+    fieldWrap.style.minHeight = `calc(100dvh - var(--bar))`;
+  }
+  window.addEventListener('resize', resizeField);
 
-  const map = createBaseMap();
-  function createBaseMap(){
-    // 0:Empty 1:Wall 2:Slow 3:Mine 4:Tower
-    const arr = Array.from({length:GRID_H},()=>Array(GRID_W).fill(0));
-    arr[START.y][START.x]=0; arr[GOAL.y][GOAL.x]=0;
-    return arr;
-  }
+  const map = createBaseMap();
+  function createBaseMap(){
+    // 0:Empty 1:Wall(unused) 2:Slow 3:Mine 4:Tower
+    const arr = Array.from({length:GRID_H},()=>Array(GRID_W).fill(0));
+    arr[START.y][START.x]=0; arr[GOAL.y][GOAL.x]=0;
+    return arr;
+  }
 
-  function renderGrid(){
-    gridEl.innerHTML = '';
-    for(let y=0;y<GRID_H;y++){
-      for(let x=0;x<GRID_W;x++){
-        const d = document.createElement('div');
-        d.className = 'cell';
-        d.dataset.x = x; d.dataset.y = y;
-        if((x===START.x && y===START.y)) d.classList.add('start');
-        if((x===GOAL.x && y===GOAL.y)) d.classList.add('goal');
-        gridEl.appendChild(d);
-      }
-    }
-  }
+  function renderGrid(){
+    gridEl.innerHTML = '';
+    for(let y=0;y<GRID_H;y++){
+      for(let x=0;x<GRID_W;x++){
+        const d = document.createElement('div');
+        d.className = 'cell';
+        d.dataset.x = x; d.dataset.y = y;
+        if((x===START.x && y===START.y)) d.classList.add('start');
+        if((x===GOAL.x && y===GOAL.y)) d.classList.add('goal');
+        gridEl.appendChild(d);
+      }
+    }
+  }
 
-  /* ===== Game State ===== */
-  const state = {
-    running:false,
-    paused:false,
-    speed:1,
-    diff:'normal',
-    money:0,
-    life:20,
-    wave:0,
-    enemies:[],
-    towers:[],
-    units:[],
-    traps:[],
-    bullets:[],
-  };
+  // A* Pathfinding
+  function findPath(startNode, endNode, grid){
+    const openSet = [{...startNode, g:0, h:heuristic(startNode, endNode), f:heuristic(startNode, endNode)}];
+    const closedSet = new Set();
+    const cameFrom = new Map();
+    while(openSet.length > 0){
+      openSet.sort((a,b)=>a.f-b.f);
+      const current = openSet.shift();
+      if(current.x === endNode.x && current.y === endNode.y) return reconstructPath(cameFrom, current);
+      closedSet.add(`${current.x},${current.y}`);
+      const neighbors = getNeighbors(current, grid);
+      for(const neighbor of neighbors){
+        if(closedSet.has(`${neighbor.x},${neighbor.y}`)) continue;
+        const gScore = current.g + 1;
+        let neighborNode = openSet.find(n=>n.x===neighbor.x && n.y===neighbor.y);
+        if(!neighborNode){
+          neighborNode = {...neighbor, g:gScore, h:heuristic(neighbor,endNode), f:gScore+heuristic(neighbor,endNode)};
+          cameFrom.set(neighborNode, current);
+          openSet.push(neighborNode);
+        }else if(gScore < neighborNode.g){
+          neighborNode.g = gScore; neighborNode.f = gScore + neighborNode.h;
+          cameFrom.set(neighborNode, current);
+        }
+      }
+    }
+    return null; // No path
+  }
+  function heuristic(a,b){ return Math.abs(a.x-b.x)+Math.abs(a.y-b.y); }
+  function getNeighbors(node, grid){
+    const n = []; const dirs=[[0,1],[0,-1],[1,0],[-1,0]];
+    for(const [dx,dy] of dirs){
+      const x = node.x+dx, y = node.y+dy;
+      if(x>=0 && x<GRID_W && y>=0 && y<GRID_H && grid[y][x] !== 4) n.push({x,y});
+    }
+    return n;
+  }
+  function reconstructPath(cameFrom, current){
+    const path = [current];
+    while(cameFrom.has(current)){ current = cameFrom.get(current); path.unshift(current); }
+    return path;
+  }
+  function recalculateAllEnemyPaths(){
+    for(const e of state.enemies){
+      const startNode = { x: clamp(Math.floor(e.x/TILE()), 0, GRID_W-1), y: clamp(Math.floor(e.y/TILE()), 0, GRID_H-1) };
+      e.path = findPath(startNode, GOAL, map); e.pathIndex = 1;
+    }
+  }
 
-  /* ===== UI ===== */
-  const moneyEl=$('#money'), lifeEl=$('#life'), waveEl=$('#wave');
-  function refreshStats(){ moneyEl.textContent = state.money|0; lifeEl.textContent = state.life; waveEl.textContent = state.wave; }
+  /* ===== Game State ===== */
+  const state = {
+    running:false, paused:false, speed:1, diff:'normal', money:0, life:20, wave:0,
+    enemies:[], towers:[], traps:[], bullets:[],
+  };
 
-  function buildPalette(){
-    const pal = $('#palette'); pal.innerHTML='';
-    ITEMS.forEach((it,i)=>{
-      const d=document.createElement('button'); d.className='item'; d.type='button'; d.dataset.key=it.key; d.dataset.index=i;
-      d.innerHTML = `<div class="ico ${it.iconClass}"></div><div class="name">${it.name}</div><div class="cost">${it.cost}</div>`;
-      pal.appendChild(d);
-    });
-  }
+  /* ===== UI ===== */
+  const moneyEl=$('#money'), lifeEl=$('#life'), waveEl=$('#wave');
+  function refreshStats(){ moneyEl.textContent = state.money|0; lifeEl.textContent = state.life; waveEl.textContent = state.wave; }
 
-  /* ===== Placement (Tap) ===== */
-  let placing = null; // { item, ghostEl }
-  let placingCell = null;
+  function buildPalette(){
+    const pal = $('#palette'); pal.innerHTML='';
+    ITEMS.forEach((it,i)=>{
+      const d=document.createElement('button'); d.className='item'; d.type='button'; d.dataset.key=it.key; d.dataset.index=i;
+      d.innerHTML = `<div class="ico ${it.iconClass}"></div><div class="name">${it.name}</div><div class="cost">${it.cost}</div>`;
+      pal.appendChild(d);
+    });
+  }
 
-  $('#palette').addEventListener('pointerdown', (e)=>{
-    const btn = e.target.closest('.item'); if(!btn) return;
-    e.preventDefault();
-    const idx = +btn.dataset.index; const item = ITEMS[idx];
-    startPlacing(item, e);
-  });
+  /* ===== Placement (Drag & Drop) ===== */
+  let placing = null; // { item, ghostEl }
+  let placingCell = null;
 
-  // Tap on grid to place
-  gridEl.addEventListener('pointerdown', (e)=>{
-    if(!placing) return; e.preventDefault();
-    const r = gridEl.getBoundingClientRect();
-    const gx = clamp(Math.floor((e.clientX - r.left)/TILE()), 0, GRID_W-1);
-    const gy = clamp(Math.floor((e.clientY - r.top)/TILE()), 0, GRID_H-1);
-    placingCell = {x:gx,y:gy};
-    tryPlace(placing.item, gx, gy);
-    cancelPlacing();
-  });
+  $('#palette').addEventListener('pointerdown', (e)=>{
+    const btn = e.target.closest('.item'); if(!btn) return;
+    e.preventDefault();
+    const idx = +btn.dataset.index; const item = ITEMS[idx];
+    startPlacing(item, e);
+    window.addEventListener('pointermove', moveGhost);
+    window.addEventListener('pointerup', endPlacing, {once:true});
+  });
 
-  function startPlacing(item, e){
-    if(state.paused){ toast('一時停止中'); return; }
-    if(state.money < item.cost){ toast('お金が足りません'); return; }
-    $$('.item').forEach(x=>x.classList.remove('sel'));
-    const src = $(`.item[data-key="${item.key}"]`); if(src) src.classList.add('sel');
-    const g=document.createElement('div'); g.className='ghost';
-    const size = item.kind==='trap' && item.key==='trap_slow' ? 34 : 30;
-    g.style.width = size+'px'; g.style.height = size+'px';
-    gridEl.appendChild(g);
-    placing = { item, ghostEl:g };
-    moveGhost(e);
-  }
+  function startPlacing(item, e){
+    if(state.paused){ toast('一時停止中'); return; }
+    if(state.money < item.cost){ toast('お金が足りません'); return; }
+    cancelPlacing();
+    $$('.item').forEach(x=>x.classList.remove('sel'));
+    const src = $(`.item[data-key="${item.key}"]`); if(src) src.classList.add('sel');
+    const g=document.createElement('div'); g.className='ghost';
+    const size = item.kind==='trap' && item.key==='trap_slow' ? 34 : 30;
+    g.style.width = size+'px'; g.style.height = size+'px';
+    gridEl.appendChild(g);
+    placing = { item, ghostEl:g };
+    moveGhost(e);
+  }
 
-  function moveGhost(e){
-    if(!placing) return;
-    const r = gridEl.getBoundingClientRect();
-    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
-    const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
-    if(clientX==null || clientY==null) return;
-    const gx = clamp(Math.floor((clientX - r.left)/TILE()), 0, GRID_W-1);
-    const gy = clamp(Math.floor((clientY - r.top)/TILE()), 0, GRID_H-1);
-    placingCell = {x:gx,y:gy};
-    const cx = gx*TILE() + TILE()/2; const cy = gy*TILE() + TILE()/2;
-    placing.ghostEl.style.left = cx+'px'; placing.ghostEl.style.top = cy+'px';
-  }
-  
-  function cancelPlacing(){
-    if(placing){ placing.ghostEl.remove(); placing=null; }
-    $$('.item').forEach(x=>x.classList.remove('sel'));
-  }
+  function moveGhost(e){
+    if(!placing) return;
+    const r = gridEl.getBoundingClientRect();
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+    if(clientX==null || clientY==null) return;
+    const gx = clamp(Math.floor((clientX - r.left)/TILE()), 0, GRID_W-1);
+    const gy = clamp(Math.floor((clientY - r.top)/TILE()), 0, GRID_H-1);
+    placingCell = {x:gx,y:gy};
+    const cx = gx*TILE() + TILE()/2; const cy = gy*TILE() + TILE()/2;
+    placing.ghostEl.style.left = cx+'px'; placing.ghostEl.style.top = cy+'px';
+  }
 
-  function tryPlace(item, x, y){
-    if(map[y]?.[x] !== 0 || (x===START.x && y===START.y) || (x===GOAL.x && y===GOAL.y)){
-      toast('ここには置けません');
-      return;
-    }
+  function endPlacing(e){
+    window.removeEventListener('pointermove', moveGhost);
+    if(placing && placingCell){
+      const r = gridEl.getBoundingClientRect();
+      if(e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom){
+        tryPlace(placing.item, placingCell.x, placingCell.y);
+      }
+    }
+    cancelPlacing();
+  }
+  
+  function cancelPlacing(){
+    if(placing){ placing.ghostEl.remove(); placing=null; }
+    placingCell = null;
+    $$('.item').forEach(x=>x.classList.remove('sel'));
+  }
 
-    if(state.money < item.cost){ toast('お金が足りません'); return; }
-    state.money -= item.cost; refreshStats();
+  function tryPlace(item, x, y){
+    if(map[y]?.[x] !== 0 || (x===START.x && y===START.y) || (x===GOAL.x && y===GOAL.y)){
+      toast('ここには置けません'); return;
+    }
+    if(state.money < item.cost){ toast('お金が足りません'); return; }
 
-    if(item.kind==='trap'){
-      if(item.key==='trap_slow'){ map[y][x]=2; spawnTrap(x,y,'slow',item); }
-      else { map[y][x]=3; spawnTrap(x,y,'mine',item); }
-      SE.place();
-    }else if(item.kind==='tower'){
-      map[y][x]=4; spawnTower(x,y,item); SE.place();
-    }
-  }
+    if(item.kind==='tower'){
+      map[y][x] = 4; // Temporarily place
+      if(!findPath(START, GOAL, map)){
+        map[y][x] = 0; // Revert
+        toast('道を塞ぐことはできません'); return;
+      }
+      state.money -= item.cost; refreshStats();
+      spawnTower(x,y,item); SE.place();
+      recalculateAllEnemyPaths();
+    }else if(item.kind==='trap'){
+      state.money -= item.cost; refreshStats();
+      if(item.key==='trap_slow'){ map[y][x]=2; spawnTrap(x,y,'slow',item); }
+      else { map[y][x]=3; spawnTrap(x,y,'mine',item); }
+      SE.place();
+    }
+  }
 
-  /* ===== Entity Spawning ===== */
-  function placeEntityEl(cls, x, y){
-    const el=document.createElement('div'); el.className='entity '+cls;
-    el.style.left = (x*TILE() + TILE()/2)+'px';
-    el.style.top  = (y*TILE() + TILE()/2)+'px';
-    gridEl.appendChild(el);
-    return el;
-  }
+  /* ===== Entity Spawning ===== */
+  function placeEntityEl(cls, x, y){
+    const el=document.createElement('div'); el.className='entity '+cls;
+    el.style.left = (x*TILE() + TILE()/2)+'px';
+    el.style.top  = (y*TILE() + TILE()/2)+'px';
+    gridEl.appendChild(el);
+    return el;
+  }
 
-  function spawnTower(x,y,item){
-    const el = placeEntityEl(item.iconClass, x,y);
-    const o = { kind:'tower', x, y, px:x*TILE()+TILE()/2, py:y*TILE()+TILE()/2, range:item.range*TILE(), dmg:item.dmg, rof:item.rof, cd:0, el };
-    state.towers.push(o);
-  }
-  function spawnTrap(x,y,type,item){
-    const el = placeEntityEl(type==='slow'?'trap slow':'trap mine', x,y);
-    state.traps.push({x,y,type,slow:item.slow??0.55, used:false, el});
-  }
+  function spawnTower(x,y,item){
+    const el = placeEntityEl(item.iconClass, x,y);
+    const o = { kind:'tower', x, y, px:x*TILE()+TILE()/2, py:y*TILE()+TILE()/2, range:item.range*TILE(), dmg:item.dmg, rof:item.rof, cd:0, el };
+    state.towers.push(o);
+  }
+  function spawnTrap(x,y,type,item){
+    const el = placeEntityEl(type==='slow'?'trap slow':'trap mine', x,y);
+    state.traps.push({x,y,type,slow:item.slow??0.55, used:false, el});
+  }
 
-  function spawnEnemy(type){
-    const base = ENEMY_BASE[type];
-    const el = placeEntityEl(base.class, START.x, START.y);
-    const hpMax = Math.ceil(base.hp * DIFFS[state.diff].enemyHP);
-    const o = {
-      type, el,
-      hp:hpMax, hpMax,
-      spd:base.spd,
-      reward: Math.round(base.reward * DIFFS[state.diff].reward),
-      dmg:base.dmg,
-      x: START.x*TILE()+TILE()/2, y: START.y*TILE()+TILE()/2,
-      slowTimer:0,
-    };
-    state.enemies.push(o);
-  }
+  function spawnEnemy(type){
+    const base = ENEMY_BASE[type];
+    const el = placeEntityEl(base.class, START.x, START.y);
+    const hpMax = Math.ceil(base.hp * DIFFS[state.diff].enemyHP);
+    const o = {
+      type, el, hp:hpMax, hpMax, spd:base.spd,
+      reward: Math.round(base.reward * DIFFS[state.diff].reward),
+      dmg:base.dmg, x: START.x*TILE()+TILE()/2, y: START.y*TILE()+TILE()/2,
+      slowTimer:0, path: findPath(START, GOAL, map), pathIndex:1,
+    };
+    state.enemies.push(o);
+  }
 
-  function fire(from, to){
-    const el = placeEntityEl('bullet', from.px/ TILE(), from.py/ TILE());
-    const b = { el, x:from.px, y:from.py, tx:to.x, ty:to.y, spd: 480, dmg: from.dmg };
-    state.bullets.push(b);
-    SE.shoot();
-  }
+  function fire(from, to){
+    const el = placeEntityEl('bullet', from.px/ TILE(), from.py/ TILE());
+    const b = { el, x:from.px, y:from.py, tx:to.x, ty:to.y, spd: 480, dmg: from.dmg };
+    state.bullets.push(b);
+    SE.shoot();
+  }
 
-  /* ===== Wave Management ===== */
-  let waveTimer=0, spawnQueue=[];
-  function setupWave(n){
-    state.wave = n; refreshStats();
-    const conf = WAVES[n-1];
-    spawnQueue = [];
-    const mult = DIFFS[state.diff].enemyNum;
-    for(const e of conf.list){
-      const count = Math.round(e.n * mult);
-      for(let i=0;i<count;i++) spawnQueue.push({type:e.type, at: (spawnQueue.at(-1)?.at??0) + e.gap});
-    }
-    waveTimer = 0;
-  }
+  /* ===== Wave Management ===== */
+  let waveTimer=0, spawnQueue=[];
+  function setupWave(n){
+    state.wave = n; refreshStats();
+    const conf = WAVES[n-1];
+    spawnQueue = [];
+    const mult = DIFFS[state.diff].enemyNum;
+    for(const e of conf.list){
+      const count = Math.round(e.n * mult);
+      let lastTime = spawnQueue.at(-1)?.at ?? -1;
+      for(let i=0;i<count;i++){
+        lastTime += e.gap;
+        spawnQueue.push({type:e.type, at: lastTime});
+      }
+    }
+    waveTimer = 0;
+  }
 
-  let intermission = true;
+  let intermission = true;
+  function startWave(){
+    if(state.wave>=10){ return; }
+    intermission=false;
+    setupWave(state.wave+1);
+    toast(`Wave ${state.wave} 開始!`);
+    SE.wave();
+  }
 
-  function startWave(){
-    if(state.wave>=10){ return; }
-    intermission=false;
-    setupWave(state.wave+1);
-    toast(`Wave ${state.wave} 開始!`);
-    SE.wave();
-  }
+  function endWave(){
+    const bonus = Math.round(40 * DIFFS[state.diff].reward);
+    state.money += bonus; refreshStats();
+    toast(`Wave ${state.wave} クリア！ +${bonus}`);
+    intermission=true;
+    if(state.wave>=10){ victory(); }
+  }
 
-  function endWave(){
-    const bonus = Math.round(40 * DIFFS[state.diff].reward);
-    state.money += bonus; refreshStats();
-    toast(`Wave ${state.wave} クリア！ +${bonus}`);
-    intermission=true;
-    if(state.wave>=10){ victory(); }
-  }
+  function victory(){ state.running=false; BGM.stop(); showResult(true); }
+  function defeat(){ state.running=false; BGM.stop(); showResult(false); }
 
-  function victory(){
-    state.running=false; BGM.stop(); showResult(true);
-  }
-  function defeat(){
-    state.running=false; BGM.stop(); showResult(false);
-  }
+  function showResult(win){
+    const res = $('#result');
+    $('#resultTitle').textContent = win? '勝利！':'敗北…';
+    $('#resultStats').textContent = `到達Wave: ${state.wave} / 所持金: ${state.money|0}`;
+    res.classList.add('show');
+  }
 
-  function showResult(win){
-    const res = $('#result');
-    $('#resultTitle').textContent = win? '勝利！':'敗北…';
-    $('#resultStats').textContent = `到達Wave: ${state.wave} / 所持金: ${state.money}`;
-    res.classList.add('show');
-  }
+  /* ===== Simple Audio ===== */
+  const AudioKit = (()=>{
+    let ctx=null; let gain;
+    function init(){ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)(); gain=ctx.createGain(); gain.gain.value=0.2; gain.connect(ctx.destination); }
+    function beep(freq=440, dur=0.07, type='square', vol=0.25){ if(!ctx) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.gain.value=vol; g.connect(gain); o.start(); o.stop(ctx.currentTime+dur); }
+    return { init, beep, get ctx(){return ctx;}, gain(){return gain;} };
+  })();
+  const SE = {
+    place:   ()=>AudioKit.beep(520,0.06,'triangle',0.18),
+    shoot:   ()=>AudioKit.beep(880,0.03,'square',0.12),
+    hit:     ()=>AudioKit.beep(240,0.05,'sine',0.1),
+    wave:    ()=>AudioKit.beep(660,0.12,'triangle',0.22),
+    explode: ()=>AudioKit.beep(160,0.15,'sawtooth',0.25),
+  };
+  const BGM = (()=>{
+    let nodes=[]; let active=false; let id=null;
+    function play(){ if(active || !AudioKit.ctx) return; active=true;
+      const ctx=AudioKit.ctx; const root=220; const freqs=[root, root*1.25, root*1.5];
+      nodes = freqs.map(f=>{ const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.gain.value=0.03; g.connect(AudioKit.gain()); o.start(); return {o,g}; });
+      let step=0; id=setInterval(()=>{
+        const ratios=[[1,1.333,1.666],[1.125,1.5,2],[1.333,1.666,2.25],[1,1.25,1.5]];
+        const r = ratios[step%ratios.length];
+        nodes.forEach((ng,i)=>{ ng.o.frequency.setTargetAtTime(root*r[i], ctx.currentTime, 0.3); });
+        step++;
+      }, 3000);
+    }
+    function stop(){ if(!active) return; active=false; if(id) clearInterval(id); id=null; nodes.forEach(ng=>{ try{ng.o.stop();}catch{} }); nodes=[]; }
+    return { play, stop };
+  })();
 
-  /* ===== Simple Audio ===== */
-  const AudioKit = (()=>{
-    let ctx=null; let gain;
-    function init(){ if(ctx) return; ctx=new (window.AudioContext||window.webkitAudioContext)(); gain=ctx.createGain(); gain.gain.value=0.2; gain.connect(ctx.destination); }
-    function beep(freq=440, dur=0.07, type='square', vol=0.25){ if(!ctx) return; const o=ctx.createOscillator(); const g=ctx.createGain(); o.type=type; o.frequency.value=freq; o.connect(g); g.gain.value=vol; g.connect(gain); o.start(); o.stop(ctx.currentTime+dur); }
-    return { init, beep, get ctx(){return ctx;}, gain(){return gain;} };
-  })();
-  const SE = {
-    place: ()=>AudioKit.beep(520,0.06,'triangle',0.18),
-    shoot: ()=>AudioKit.beep(880,0.03,'square',0.12),
-    hit:   ()=>AudioKit.beep(240,0.05,'sine',0.1),
-    wave:  ()=>AudioKit.beep(660,0.12,'triangle',0.22)
-  };
-  const BGM = (()=>{
-    let nodes=[]; let active=false; let id=null;
-    function play(){ if(active || !AudioKit.ctx) return; active=true;
-      const ctx=AudioKit.ctx; const root=220; const freqs=[root, root*1.25, root*1.5];
-      nodes = freqs.map(f=>{ const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.gain.value=0.03; g.connect(AudioKit.gain()); o.start(); return {o,g}; });
-      let step=0; id=setInterval(()=>{
-        const ratios=[[1,1.333,1.666],[1.125,1.5,2],[1.333,1.666,2.25],[1,1.25,1.5]];
-        const r = ratios[step%ratios.length];
-        nodes.forEach((ng,i)=>{ ng.o.frequency.setTargetAtTime(root*r[i], ctx.currentTime, 0.3); });
-        step++;
-      }, 3000);
-    }
-    function stop(){ if(!active) return; active=false; if(id) clearInterval(id); id=null; nodes.forEach(ng=>{ try{ng.o.stop();}catch{} }); nodes=[]; }
-    return { play, stop };
-  })();
+  /* ===== Loop ===== */
+  let last=0;
+  function loop(t){
+    if(!state.running){ last=t; requestAnimationFrame(loop); return; }
+    const dt = Math.min(0.05, (t-last)/1000) * (state.speed||1);
+    last=t;
+    if(!state.paused){ update(dt); }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
 
-  /* ===== Loop ===== */
-  let last=0;
-  function loop(t){
-    if(!state.running){ last=t; requestAnimationFrame(loop); return; }
-    const dt = Math.min(0.05, (t-last)/1000) * (state.speed||1);
-    last=t;
-    if(!state.paused){
-      update(dt);
-    }
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
+  function update(dt){
+    // Spawn
+    if(!intermission && spawnQueue.length){
+      waveTimer += dt;
+      while(spawnQueue.length && waveTimer >= spawnQueue[0].at){
+        spawnEnemy(spawnQueue.shift().type);
+      }
+    }
 
-  function update(dt){
-    // Spawn
-    if(!intermission && spawnQueue.length){
-      waveTimer += dt;
-      while(spawnQueue.length && waveTimer >= spawnQueue[0].at){
-        const q = spawnQueue.shift();
-        spawnEnemy(q.type);
-      }
-    }
+    // Enemy movement
+    for(let i=state.enemies.length-1;i>=0;i--){
+      const e = state.enemies[i];
+      
+      if(!e.path || e.pathIndex >= e.path.length){
+        e.el.remove(); state.enemies.splice(i,1);
+        state.life -= (e.dmg||1); state.money += Math.floor(e.reward/2);
+        refreshStats();
+        if(state.life<=0){ defeat(); }
+        continue;
+      }
+      
+      const targetNode = e.path[e.pathIndex];
+      const targetX = targetNode.x*TILE()+TILE()/2, targetY = targetNode.y*TILE()+TILE()/2;
+      const dx = targetX - e.x, dy = targetY - e.y;
+      const dist = Math.hypot(dx,dy);
+      
+      if(dist < 4){ e.pathIndex++; }
 
-    // Enemy movement
-    for(let i=state.enemies.length-1;i>=0;i--){
-      const e = state.enemies[i];
-      const goalX = GOAL.x*TILE()+TILE()/2, goalY = GOAL.y*TILE()+TILE()/2;
-      
-      let avoidForceX = 0, avoidForceY = 0;
-      for (const t of state.towers) {
-        const dist = Math.hypot(e.x - t.px, e.y - t.py);
-        if (dist < TILE() * 2) {
-          const dx = e.x - t.px;
-          const dy = e.y - t.py;
-          const force = (TILE() * 2 - dist) / (TILE() * 2);
-          avoidForceX += dx/dist * force;
-          avoidForceY += dy/dist * force;
-        }
-      }
+      let spd = e.spd * 60;
+      if(e.slowTimer>0){ spd *= 0.5; e.slowTimer -= dt; }
+      const step = Math.min(dist, spd*dt);
+      e.x += dx/dist*step; e.y += dy/dist*step;
+      e.el.style.left = e.x+'px'; e.el.style.top = e.y+'px';
+      
+      const cx = clamp(Math.floor(e.x/TILE()), 0, GRID_W-1), cy = clamp(Math.floor(e.y/TILE()), 0, GRID_H-1);
+      const cell = map[cy]?.[cx];
+      if(cell===2){ e.slowTimer = 0.6; }
+      else if(cell===3){
+        map[cy][cx]=0;
+        const trIndex = state.traps.findIndex(t=>t.x===cx&&t.y===cy&&t.type==='mine');
+        if(trIndex>=0){
+          const trap = state.traps[trIndex];
+          const explosionEl = document.createElement('div');
+          explosionEl.className='explosion';
+          explosionEl.style.left=trap.el.style.left; explosionEl.style.top=trap.el.style.top;
+          gridEl.appendChild(explosionEl);
+          setTimeout(()=>explosionEl.remove(), 300);
+          trap.el.remove(); state.traps.splice(trIndex,1);
+        }
+        damageEnemy(e, 90); SE.explode();
+      }
+    }
 
-      const dx = goalX - e.x + avoidForceX * 10;
-      const dy = goalY - e.y + avoidForceY * 10;
-      const dist = Math.hypot(dx, dy);
+    // Tower attacks
+    for(const s of state.towers){
+      s.cd -= dt; if(s.cd>0) continue;
+      let target=null, best= Infinity;
+      for(const e of state.enemies){
+        const d = Math.hypot(e.x - s.px, e.y - s.py);
+        if(d<=s.range && d<best){ best=d; target=e; }
+      }
+      if(target){ fire(s, target); s.cd = 1.0/ s.rof; }
+    }
 
-      if (dist < TILE()/2) {
-        e.el.remove();
-        state.enemies.splice(i,1);
-        state.life -= (e.dmg||1);
-        state.money += Math.floor(e.reward / 2);
-        refreshStats();
-        if(state.life<=0){ defeat(); }
-        continue;
-      }
-      
-      let spd = e.spd * 60;
-      if(e.slowTimer>0){ spd *= 0.5; e.slowTimer -= dt; }
-      const step = Math.min(dist, spd*dt);
-      e.x += dx/dist*step; e.y += dy/dist*step;
-      e.el.style.left = e.x+'px'; e.el.style.top = e.y+'px';
-      
-      const cx = Math.floor(e.x/TILE()), cy = Math.floor(e.y/TILE());
-      const cell = map[cy]?.[cx];
-      if(cell===2){ // Slow trap
-        e.slowTimer = 0.6;
-      }else if(cell===3){ // Mine trap
-        map[cy][cx]=0;
-        const trIndex = state.traps.findIndex(t=>t.x===cx&&t.y===cy&&t.type==='mine');
-        if(trIndex>=0){ state.traps[trIndex].el.remove(); state.traps.splice(trIndex,1); }
-        damageEnemy(e, 90);
-      }
-    }
+    // Bullet movement
+    for(let i=state.bullets.length-1;i>=0;i--){
+      const b=state.bullets[i];
+      const dx=b.tx - b.x, dy=b.ty - b.y; const dist=Math.hypot(dx,dy);
+      const step = Math.min(dist, b.spd*dt);
+      b.x += dx/dist*step; b.y += dy/dist*step;
+      b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
+      if(dist<6){
+        let hit=null, best=Infinity;
+        for(const e of state.enemies){
+          const d=Math.hypot(e.x-b.x, e.y-b.y); if(d<best){ best=d; hit=e; }
+        }
+        if(hit && best<20){ damageEnemy(hit, b.dmg); }
+        b.el.remove(); state.bullets.splice(i,1);
+      }
+    }
 
-    // Tower attacks
-    const shooters = state.towers;
-    for(const s of shooters){
-      s.cd -= dt; if(s.cd>0) continue;
-      let target=null, best= Infinity;
-      for(const e of state.enemies){
-        const d = Math.hypot(e.x - s.px, e.y - s.py);
-        if(d<=s.range){
-          if(d<best){ best=d; target=e; }
-        }
-      }
-      if(target){ fire(s, target); s.cd = 1.0/ s.rof; }
-    }
+    if(!intermission && spawnQueue.length===0 && state.enemies.length===0) endWave();
+  }
 
-    // Bullet movement and hit detection
-    for(let i=state.bullets.length-1;i>=0;i--){
-      const b=state.bullets[i];
-      const dx=b.tx - b.x, dy=b.ty - b.y; const dist=Math.hypot(dx,dy);
-      const step = Math.min(dist, b.spd*dt);
-      b.x += dx/dist*step; b.y += dy/dist*step;
-      b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
-      if(dist<6){
-        let hit=null, best=Infinity;
-        for(const e of state.enemies){
-          const d=Math.hypot(e.x-b.x, e.y-b.y); if(d<best){ best=d; hit=e; }
-        }
-        if(hit && best<20){ damageEnemy(hit, b.dmg); }
-        b.el.remove(); state.bullets.splice(i,1);
-      }
-    }
+  function damageEnemy(e, dmg){
+    e.hp -= dmg; flashEl(e.el); SE.hit();
+    if(e.hp<=0){
+      e.el.remove();
+      const idx = state.enemies.indexOf(e);
+      if(idx>=0) state.enemies.splice(idx,1);
+      state.money += e.reward; refreshStats();
+    }
+  }
 
-    // Check for end of wave
-    if(!intermission && spawnQueue.length===0 && state.enemies.length===0){
-      endWave();
-    }
-  }
+  function flashEl(el){ el.animate([{filter:'brightness(1)'},{filter:'brightness(2)'}],{duration:120}); }
 
-  function damageEnemy(e, dmg){
-    e.hp -= dmg; flashEl(e.el); SE.hit();
-    if(e.hp<=0){
-      e.el.remove();
-      const idx = state.enemies.indexOf(e);
-      if(idx>=0) state.enemies.splice(idx,1);
-      state.money += e.reward; refreshStats();
-    }
-  }
+  /* ===== Controls ===== */
+  $('#btnStartWave').addEventListener('click', ()=>{ if(intermission) startWave(); });
+  $('#btnPause').addEventListener('click', ()=>{ state.paused = !state.paused; toast(state.paused? '一時停止' : '再開'); });
+  $('#btnSpeed').addEventListener('click', (e)=>{
+    state.speed = state.speed===1? 1.5 : state.speed===1.5? 2 : 1;
+    e.target.textContent = `速度×${state.speed}`;
+  });
 
-  function flashEl(el){
-    el.animate([{filter:'brightness(1)'},{filter:'brightness(2)'}],{duration:120});
-  }
+  let chosenDiff = 'normal';
+  $('#difficulty').addEventListener('click', (e)=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    chosenDiff = c.dataset.diff; $$('#difficulty .chip').forEach(x=>x.classList.toggle('sel', x===c));
+  });
 
-  /* ===== Controls ===== */
-  $('#btnStartWave').addEventListener('click', ()=>{
-    if(intermission){ startWave(); }
-  });
-  $('#btnPause').addEventListener('click', ()=>{
-    state.paused = !state.paused; toast(state.paused? '一時停止' : '再開');
-  });
-  $('#btnSpeed').addEventListener('click', (e)=>{
-    state.speed = state.speed===1? 1.5 : state.speed===1.5? 2 : 1;
-    e.target.textContent = `速度×${state.speed}`;
-  });
+  $('#btnStartGame').addEventListener('click', ()=>{
+    AudioKit.init(); BGM.play();
+    const d = DIFFS[chosenDiff];
+    Object.assign(state, { running:true, paused:false, speed:1, diff:chosenDiff, money:d.startMoney, life:d.life, wave:0 });
+    state.enemies=[]; state.towers=[]; state.traps=[]; state.bullets=[];
+    renderGrid(); buildPalette();
+    refreshStats();
+    $('#overlay').classList.remove('show');
+    intermission = true;
+    toast('準備フェーズ：配置してからWave開始を押してください');
+  });
 
-  // Difficulty selection and start (Audio init here)
-  let chosenDiff = 'normal';
-  $('#difficulty').addEventListener('click', (e)=>{
-    const c = e.target.closest('.chip'); if(!c) return;
-    chosenDiff = c.dataset.diff; $$('#difficulty .chip').forEach(x=>x.classList.toggle('sel', x===c));
-  });
+  $('#btnBackTitle').addEventListener('click', ()=>{ location.reload(); });
 
-  $('#btnStartGame').addEventListener('click', ()=>{
-    AudioKit.init(); BGM.play();
-    const d = DIFFS[chosenDiff];
-    Object.assign(state, { running:true, paused:false, speed:1, diff:chosenDiff, money:d.startMoney, life:d.life, wave:0 });
-    refreshStats();
-    $('#overlay').classList.remove('show');
-    intermission = true;
-    toast('準備フェーズ：配置してからWave開始を押してください');
-  });
+  /* ===== Initialization ===== */
+  function init(){
+    resizeField();
+    renderGrid();
+    buildPalette();
+    refreshStats();
+  }
 
-  $('#btnBackTitle').addEventListener('click', ()=>{
-    location.reload();
-  });
-
-  /* ===== Initialization ===== */
-  function init(){
-    resizeField();
-    renderGrid();
-    buildPalette();
-    refreshStats();
-  }
-
-  init();
+  init();
 })();
 </script>
 </body>
